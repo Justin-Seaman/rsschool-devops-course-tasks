@@ -5,9 +5,9 @@ terraform {
       version = "~> 5.0"
     }
   }
-    backend "s3" {
+  backend "s3" {
     bucket = "jsrsstate"
-    key = "state/terraform.tfstate"
+    key    = "state/terraform.tfstate"
     region = "us-east-2"
   }
 }
@@ -27,19 +27,19 @@ resource "aws_iam_openid_connect_provider" "gh_oidc_provider" {
 }
 
 resource "aws_iam_role" "gh_actions_role" {
-  name                = "GithubActionsRole"
-  assume_role_policy  = jsonencode({
+  name = "GithubActionsRole"
+  assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
       Principal = {
-    # AWS = "arn:aws:iam::584296377309:user/ghactions"
-      Federated = aws_iam_openid_connect_provider.gh_oidc_provider.arn
+        # AWS = "arn:aws:iam::584296377309:user/ghactions"
+        Federated = aws_iam_openid_connect_provider.gh_oidc_provider.arn
       },
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringLike = {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:aud" : "sts.amazonaws.com",
           "token.actions.githubusercontent.com:sub" = "repo:Justin-Seaman/rsschool-devops-course-tasks:*"
         }
       }
