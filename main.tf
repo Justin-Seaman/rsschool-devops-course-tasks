@@ -18,7 +18,12 @@ provider "aws" {
 
 resource "aws_s3_bucket" "jsrsstate_create" {
   bucket = "jsrsstate"
-  acl    = "private"
+}
+resource "aws_s3_bucket_ownership_controls" "jsrsstate_ownership" {
+  bucket = aws_s3_bucket.jsrsstate_create.id
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
 }
 
 resource "aws_iam_openid_connect_provider" "gh_oidc_provider" {
@@ -28,7 +33,7 @@ resource "aws_iam_openid_connect_provider" "gh_oidc_provider" {
     "sts.amazonaws.com",
   ]
 
-  thumbprint_list = ["D89E3BD43D5D909B47A18977AA9D5CE36CEE184C"]
+  thumbprint_list = ["d89e3bd43d5d909b47a18977aa9d5ce36cee184c"]
 }
 
 resource "aws_iam_role" "gh_actions_role" {
