@@ -1,8 +1,8 @@
 name: Terraform Commands
 run-name: ${{ github.actor }} has pushed a new config. This action is peforming a deploytment to AWS. 🚀
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read  # This is required for actions/checkout
+  id-token: write 
+  contents: read  
 on: 
   push:
     branches:
@@ -44,9 +44,6 @@ jobs:
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
-      
-      - name: Debug identity
-        run: aws sts get-caller-identity
 
       - name: Plan Terraform
         id: terraform_plan
