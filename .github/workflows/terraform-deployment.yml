@@ -1,0 +1,66 @@
+name: Terraform Commands
+run-name: ${{ github.actor }} has pushed a new config. This action is peforming a deploytment to AWS. 🚀
+on: 
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+        terraform-check:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Install Terraform
+          uses: hashicorp/setup-terraform@v3
+        
+        - name: Configure AWS Credentials (OIDC)
+          id: aws_credentials
+          uses: hashicorp/configure-aws-credentials@v2
+          with:
+            region: us-east-2
+            role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
+            token_source: github_actions_oidc
+
+        - name: Initialize Terraform
+          id: terraform_init
+          run: terraform fmt -check
+          
+        terraform-plan:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Install Terraform
+          uses: hashicorp/setup-terraform@v3
+        
+        - name: Configure AWS Credentials (OIDC)
+          id: aws_credentials
+          uses: hashicorp/configure-aws-credentials@v2
+          with:
+            region: us-east-2
+            role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
+            token_source: github_actions_oidc
+
+        - name: Plan Terraform
+          id: terraform_plan
+          run: terraform plan
+
+        terraform-apply:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Install Terraform
+          uses: hashicorp/setup-terraform@v3
+        
+        - name: Configure AWS Credentials (OIDC)
+          id: aws_credentials
+          uses: hashicorp/configure-aws-credentials@v2
+          with:
+            region: us-east-2
+            role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
+            token_source: github_actions_oidc
+
+        - name: Apply Terraform
+          id: terraform_apply
+          run: terraform apply -auto-approve
