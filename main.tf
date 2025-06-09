@@ -16,6 +16,11 @@ provider "aws" {
   region = "us-east-2"
 }
 
+resource "aws_s3_bucket" "jsrsstate_create" {
+  bucket = "jsrsstate"
+  acl    = "private"
+}
+
 resource "aws_iam_openid_connect_provider" "gh_oidc_provider" {
   url = "https://token.actions.githubusercontent.com"
 
