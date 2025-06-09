@@ -44,10 +44,15 @@ jobs:
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
+      
+      - name: Debug identity
+        run: aws sts get-caller-identity
 
       - name: Plan Terraform
         id: terraform_plan
-        run: terraform plan
+        run: 
+          terraform init
+          terraform plan
 
   terraform-apply:
     runs-on: ubuntu-latest
@@ -68,4 +73,7 @@ jobs:
 
       - name: Apply Terraform
         id: terraform_apply
-        run: terraform apply -auto-approve
+        run: 
+          terraform init
+          terraform plan
+          terraform apply -auto-approve
