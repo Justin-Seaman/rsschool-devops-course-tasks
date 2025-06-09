@@ -16,33 +16,15 @@ provider "aws" {
   region = "us-east-2"
 }
 
-# Configure GitHub Actions User
-resource "aws_iam_user" "gh_actions_user" {
-  name = "ghactions"
-  path = "/"
+resource "aws_iam_openid_connect_provider" "gh_oidc_provider" {
+  url = "https://token.actions.githubusercontent.com"
 
-  tags = {
-    tag-key = "tf-created"
-  }
+  client_id_list = [
+    "sts.amazonaws.com",
+  ]
+
+  thumbprint_list = ["D89E3BD43D5D909B47A18977AA9D5CE36CEE184C"]
 }
-#NEEDED??
-    #resource "aws_iam_access_key" "lb" {
-    #  user = aws_iam_user.lb.name
-    #}
-
-    #data "aws_iam_policy_document" "lb_ro" {
-    #  statement {
-    #    effect    = "Allow"
-    #    actions   = ["ec2:Describe*"]
-    #    resources = ["*"]
-    #  }
-    #}
-
-    #resource "aws_iam_user_policy" "lb_ro" {
-    #  name   = "test"
-    #  user   = aws_iam_user.lb.name
-    #  policy = data.aws_iam_policy_document.lb_ro.json
-    #}
 
 resource "aws_iam_role" "gh_actions_role" {
   name                = "GithubActionsRole"
@@ -51,9 +33,16 @@ resource "aws_iam_role" "gh_actions_role" {
     Statement = [{
       Effect = "Allow",
       Principal = {
-        AWS = "arn:aws:iam::584296377309:user/ghactions"
+    # AWS = "arn:aws:iam::584296377309:user/ghactions"
+      Federated = aws_iam_openid_connect_provider.gh_oidc_provider.arn
       },
-      Action = "sts:AssumeRole"
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringLike = {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub" = "repo:Justin-Seaman/rsschool-devops-course-tasks:*"
+        }
+      }
     }]
   })
 }
