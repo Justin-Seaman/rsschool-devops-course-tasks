@@ -19,7 +19,7 @@ jobs:
       
       - name: Configure AWS Credentials (OIDC)
         id: aws_credentials
-        uses: hashicorp/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
@@ -40,7 +40,7 @@ jobs:
       
       - name: Configure AWS Credentials (OIDC)
         id: aws_credentials
-        uses: hashicorp/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
@@ -61,7 +61,7 @@ jobs:
       
       - name: Configure AWS Credentials (OIDC)
         id: aws_credentials
-        uses: hashicorp/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
