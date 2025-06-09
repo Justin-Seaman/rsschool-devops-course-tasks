@@ -21,9 +21,8 @@ jobs:
         id: aws_credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          region: us-east-2
+          aws-region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
-          token_source: github_actions_oidc
 
       - name: Initialize Terraform
         id: terraform_init
@@ -42,9 +41,8 @@ jobs:
         id: aws_credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          region: us-east-2
+          aws-region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
-          token_source: github_actions_oidc
 
       - name: Plan Terraform
         id: terraform_plan
@@ -63,9 +61,8 @@ jobs:
         id: aws_credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          region: us-east-2
+          aws-region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
-          token_source: github_actions_oidc
 
       - name: Apply Terraform
         id: terraform_apply
