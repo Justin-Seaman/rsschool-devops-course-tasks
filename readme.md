@@ -85,7 +85,8 @@ Additional tasks:
 
 5. **Create a bucket for Terraform states**
 
-   - Locking terraform state via DynamoDB is not required in this task, but recommended by the best practices. vvvv [✅ DynamoDB not used for this stage]
+   - Locking terraform state via DynamoDB is not required in this task, but recommended by the best practices. vvvv [✅ DynamoDB configured in commit `a50198a626378cff64b8d9a4497af2e683dbf7ec`]
+   ![dynamodb](/.visual_assets/dynamodb.png)
    - [Managing Terraform states Best Practices](https://spacelift.io/blog/terraform-s3-backend)
    - [Terraform backend S3](https://developer.hashicorp.com/terraform/language/backend/s3)
 ![encrypted_versioned_bucket.png](/.visual_assets/encrypted_versioned_bucket.png)
