@@ -51,3 +51,8 @@ resource "aws_iam_role_policy_attachment" "ebrdg_full_access" {
   role       = aws_iam_role.gh_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEventBridgeFullAccess"
 }
+
+resource "aws_iam_role_policy_attachment" "dynamodb_full_access" {
+  role       = aws_iam_role.gh_actions_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
