@@ -10,6 +10,12 @@ variable "tf_state_bucket" {
   description = "Name of s3 bucket for terraform state"
 }
 
+variable "tf_lock_db" {
+  type        = string
+  default     = "jsrslock"
+  description = "Name of DynamoDB for terraform lock"
+}
+
 variable "gh_org" {
   type        = string
   default     = "Justin-Seaman"
