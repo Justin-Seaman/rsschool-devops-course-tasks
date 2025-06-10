@@ -10,6 +10,7 @@ terraform {
     key            = "state/terraform.tfstate"
     region         = "us-east-2"
     dynamodb_table = "jsrslock"
+    encrypt        = true
   }
 }
 provider "aws" {
