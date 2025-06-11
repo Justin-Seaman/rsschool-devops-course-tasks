@@ -1,0 +1,77 @@
+name: Terraform Commands
+run-name: ${{ github.actor }} has pushed a new config. This action is peforming a deploytment to AWS. 🚀
+permissions:
+  id-token: write 
+  contents: read  
+on: 
+  push:
+    branches:
+      - main
+      - task_1
+jobs:
+  terraform-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+      
+      - name: Configure AWS Credentials (OIDC)
+        id: aws_credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
+
+      - name: Initialize Terraform
+        id: terraform_init
+        run: terraform fmt -check
+          
+  terraform-plan:
+    runs-on: ubuntu-latest
+    needs: terraform-check
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+      
+      - name: Configure AWS Credentials (OIDC)
+        id: aws_credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
+
+      - name: Plan Terraform
+        id: terraform_plan
+        run: |
+          terraform init
+          terraform plan
+
+  terraform-apply:
+    runs-on: ubuntu-latest
+    needs: [terraform-plan, terraform-check]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+      
+      - name: Configure AWS Credentials (OIDC)
+        id: aws_credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
+
+      - name: Apply Terraform
+        id: terraform_apply
+        run: |
+          terraform init
+          terraform plan
+          terraform apply -auto-approve
