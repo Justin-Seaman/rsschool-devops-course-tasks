@@ -9,7 +9,8 @@ Deploying CI/CD changes via Terraform configuration files to test Infastructure 
 + *variables.tf* - environment specific variables file for aws-region, terraform state, and github OIDC connection.
 + *oidc.tf* - establishes OIDC trust relationship between AWS and GitHub. Only allowed for owner and repo set in variables.
 + *iam-gh_actions_role.tf* - grants FullAccess to core AWS Services to the role used for GitHub Actions OIDC.
-+ *s3.tf* - Handles creation of s3 bucket for shared tf state
++ *s3.tf* - Handles creation of s3 bucket for shared tf state.
++ *vpc.tf* - Handles creation of VPC, subnets, IG, and routing
 
 ## GitHub Actions Files
 
@@ -29,168 +30,135 @@ On push to main branch, GitHub Actions will run based on yml action file in .git
 
 # Process
 
-# Task 1: AWS Account Configuration
+# Task 2: Basic Infrastructure Configuration
 
-![hero](/.visual_assets/task_1.png)
+![task_2 ](.visual_assets/task_2.png)
 
 ## Objective
 
-In this task, you will:
-
-- Install and configure the required software on your local computer
-- Set up an AWS account with the necessary permissions and security configurations
-- Deploy S3 buckets for Terraform states
-- Create a Github Actions workflow to deploy infrastructure in AWS
-
-Additional tasks:
-
-- Create a federation with your AWS account for Github Actions
-- Create an IAM role for Github Actions
+In this task, you will write Terraform code to configure the basic networking infrastructure required for a Kubernetes (K8s) cluster.
 
 ## Steps
 
-1. **Install AWS CLI and Terraform**
+1. **Write Terraform Code**
 
-   - Follow the instructions to install [AWS CLI 2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
-   - Follow the instructions to install [Terraform 1.6+](https://developer.hashicorp.com/terraform/install?product_intent=terraform).
-   - **optional** Configuring Terraform version manager [tfenv](https://github.com/tfutils/tfenv)
+   - Create Terraform code to configure the following:
+     - VPC
+     - 2 public subnets in different AZs
+     - 2 private subnets in different AZs
+     - Internet Gateway
+     - Routing configuration:
+       - Instances in all subnets can reach each other
+       - Instances in public subnets can reach addresses outside VPC and vice-versa
 
-2. **Create IAM User and Configure MFA**
+### Subnet configuration:
 
-   - In your AWS account, navigate to IAM and create a new user with the following policies attached:
-     - AmazonEC2FullAccess
-     - AmazonRoute53FullAccess
-     - AmazonS3FullAccess
-     - IAMFullAccess
-     - AmazonVPCFullAccess
-     - AmazonSQSFullAccess
-     - AmazonEventBridgeFullAccess
-![user](/.visual_assets/user.png)
-![group](/.visual_assets/group.png)
-![permission-set](/.visual_assets/permission-set.png)
-   - Configure MFA for both the new user and the root user.
-![jsrs_mfa](/.visual_assets/jsrs_mfa.png)
-![root_mfa](/.visual_assets/root_mfa.png)
-   - Generate a new pair of Access Key ID and Secret Access Key for the user.
-✅ 
-3. **Configure AWS CLI**
+|  Name           |  CIDR              |
+|  -------------- |  ----------------- |
+|  az1_pub(1)     |  10.1.1.0/24       |
+|  az1_priv(1)    |  10.1.101.0/24     |
+|  az2_pub(1)     |  10.2.1.0/24       |
+|  az2_priv(1)    |  10.2.101.0/24     |
 
-   - Configure AWS CLI to use the new user's credentials.✅ 
-   - Verify the configuration by running the command: `aws ec2 describe-instance-types --instance-types t4g.nano`. ✅ 
-   ![aws-conf](/.visual_assets/aws-conf.png)
+2. **Organize Code**
 
-4. **Create a Github repository for your Terraform code**
+   - Define variables in a separate variables file.
+   - Separate resources into different files for better organization.
 
-   - Using your personal account create a repository `rsschool-devops-course-tasks` ✅ 
+3. **Verify Configuration**
 
-5. **Create a bucket for Terraform states**
+   - Execute `terraform plan` to ensure the configuration is correct.
+   - Provide a resource map screenshot (VPC -> Your VPCs -> your_VPC_name -> Resource map).
 
-   - Locking terraform state via DynamoDB is not required in this task, but recommended by the best practices. vvvv [✅ DynamoDB configured in commit `a50198a626378cff64b8d9a4497af2e683dbf7ec`]
-   ![dynamodb](/.visual_assets/dynamodb.png)
-   - [Managing Terraform states Best Practices](https://spacelift.io/blog/terraform-s3-backend)
-   - [Terraform backend S3](https://developer.hashicorp.com/terraform/language/backend/s3)
-![encrypted_versioned_bucket.png](/.visual_assets/encrypted_versioned_bucket.png)
+4. **Additional Tasks💫**
+   - Implement security groups.
+   - Create a bastion host for secure access to the private subnets.
+   - Organize NAT for private subnets, so instances in the private subnet can connect with the outside world:
+     - Simpler way: create a NAT Gateway
+     - Cheaper way: configure a NAT instance in the public subnet
+   - Document the infrastructure setup and usage in a README file.
 
-6. **Create an IAM role for Github Actions(Additional task)💫**
-
-   - Create an IAM role `GithubActionsRole` with the same permissions as in step 2:
-     - AmazonEC2FullAccess
-     - AmazonRoute53FullAccess
-     - AmazonS3FullAccess
-     - IAMFullAccess
-     - AmazonVPCFullAccess
-     - AmazonSQSFullAccess
-     - AmazonEventBridgeFullAccess
-     ![GHActions_Role](/.visual_assets/GHActions_Role.png)
-   - [Terraform resource](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role)
-
-7. **Configure an Identity Provider and Trust policies for Github Actions(Additional task)💫**
-
-   - Update the `GithubActionsRole` IAM role with a Trust policy following the next guides
-   ![oidc_trust](/.visual_assets/oidc_trust.png)
-   - [IAM roles terms and concepts](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html#id_roles_terms-and-concepts)
-   - [Github tutorial](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)
-   - [AWS documentation on OIDC providers](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html#idp_oidc_Create_GitHub)
-   - `GitHubOrg` is a Github `username` in this case
-
-
-8. **Create a Github Actions workflow for deployment via Terraform**
-   - The workflow should have 3 jobs that run on pull request and push to the default branch:
-     - `terraform-check` with format checking using [terraform fmt](https://developer.hashicorp.com/terraform/cli/commands/fmt)
-     - `terraform-plan` for planning deployments [terraform plan](https://developer.hashicorp.com/terraform/cli/commands/plan)
-     - `terraform-apply` for deploying [terraform apply](https://developer.hashicorp.com/terraform/cli/commands/apply)
-     ![gh-action-stages](/.visual_assets/gh-action-stages.png)
-   - [terraform init](https://developer.hashicorp.com/terraform/cli/commands/init)
-   - [Github actions reference](https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions)
-   - [Setup terraform](https://github.com/hashicorp/setup-terraform)
-   - [Configure AWS Credentials](https://github.com/aws-actions/configure-aws-credentials)
-![gh-action-stages.png](/.visual_assets/gh-action-stages.png)
 ## Submission
 
-- Create a branch `task_1` from `main` branch in your repository.
-- [Create a Pull Request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) (PR) from `task_1` branch to `main`.
-- Provide the code for Terraform and GitHub Actions in the PR.
-    + main.tf - main class responsible for configuraiton of state file to AWS S3 bucket backend.
-    + variables.tf - environment specific variables file for aws-region, terraform state, and github OIDC connection.
-    + oidc.tf - establishes OIDC trust relationship between AWS and GitHub. Only allowed for owner and repo set in variables.
-    + iam-gh_actions_role.tf - grants FullAccess to core AWS Services to the role used for GitHub Actions OIDC.
-    + s3.tf - Handles creation of s3 bucket for shared tf state
-    + terraform-deployment.yml - GitHub Actions Workflow with the 3 terraform stages
-- Provide screenshots of `aws --version` and `terraform version` in the PR description.
-![aws_tf-versions.png](/.visual_assets/aws_tf-versions.png)
-- Provide a link to the Github Actions workflow run in the PR description.
-    + LINK: https://github.com/Justin-Seaman/rsschool-devops-course-tasks/actions
-- Provide the Terraform plan output with S3 bucket (and possibly additional resources) creation in the PR description.
-
-``` 
-PS C:\Users\JustinSeaman\github-repos\rsschool-devops-course-tasks> terraform plan
-aws_iam_openid_connect_provider.gh_oidc_provider: Refreshing state... [id=arn:aws:iam::584296377309:oidc-provider/token.actions.githubusercontent.com]                                                                                                                            
-aws_s3_bucket.jsrsstate_create: Refreshing state... [id=jsrsstate]                                                                       
-aws_instance.ubuntu: Refreshing state... [id=i-01d762cf185b4c069]                                                                        
-aws_iam_role.gh_actions_role: Refreshing state... [id=GithubActionsRole]                                                                 
-aws_iam_role_policy_attachment.vpc_full_access: Refreshing state... [id=GithubActionsRole-20250609144628677800000003]                    
-aws_iam_role_policy_attachment.s3_full_access: Refreshing state... [id=GithubActionsRole-20250609144628695500000005]                     
-aws_iam_role_policy_attachment.ebrdg_full_access: Refreshing state... [id=GithubActionsRole-20250609144628680100000004]
-aws_iam_role_policy_attachment.ec2_full_access: Refreshing state... [id=GithubActionsRole-20250609144201257300000001]
-aws_iam_role_policy_attachment.iam_full_access: Refreshing state... [id=GithubActionsRole-20250609144628649000000001]
-aws_iam_role_policy_attachment.sqs_full_access: Refreshing state... [id=GithubActionsRole-20250609144628668400000002]
-aws_iam_role_policy_attachment.r53_full_access: Refreshing state... [id=GithubActionsRole-20250609144628697800000006]
-aws_s3_bucket_ownership_controls.jsrsstate_ownership: Refreshing state... [id=jsrsstate]
-
-No changes. Your infrastructure matches the configuration.
-
-Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed.
-```
+- Create `task_2` branch from `main` in your repository.
+- [Create a Pull Request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) (PR) with the Terraform code in your repository from `task_2` to `main`.
+- Provide screenshots of a resource map screenshot (VPC -> Your VPCs -> your_VPC_name -> Resource map) in the PR description.
+- (Optional) Set up a GitHub Actions (GHA) pipeline for the Terraform code.
 
 ## Evaluation Criteria (100 points for covering all criteria)
 
-1. **MFA User configured (10 points)**
+1. **Terraform Code Implementation (50 points)**
 
-   - Screenshot of the non-root account secured by MFA (ensure sensitive information is not shared) is presented
+   - Terraform code is created to configure the following:
+     - VPC
+     - 2 public subnets in different AZs
+     - 2 private subnets in different AZs
+     - Internet Gateway
+     - Routing configuration:
+       - Instances in all subnets can reach each other
+       - Instances in public subnets can reach addresses outside the VPC and vice-versa
 
-2. **Bucket and GithubActionsRole IAM role configured (20 points)**
-
-   - Terraform code is created and includes:
-     - Provider initialization
-     - Creation of S3 Bucket
-
-3. **Github Actions workflow is created (30 points)**
-
-   - Workflow includes all jobs
-
-4. **Code Organization (10 points)**
+2. **Code Organization (10 points)**
 
    - Variables are defined in a separate variables file.
    - Resources are separated into different files for better organization.
 
-5. **Verification (10 points)**
+3. **Verification (10 points)**
 
-   - Terraform plan is executed successfully
+   - Terraform plan is executed successfully.
+   - A resource map screenshot is provided (VPC -> Your VPCs -> your_VPC_name -> Resource map).
 
-6. **Additional Tasks (20 points)💫**
+4. **Additional Tasks (30 points)💫**
+   - **Security Groups and Network ACLs (5 points)**
+     - Implement security groups and network ACLs for the VPC and subnets.
+   - **Bastion Host (5 points)**
+     - Create a bastion host for secure access to the private subnets.
+   - **NAT is implemented for private subnets (10 points)**
+     - Orginize NAT for private subnets in a simpler or cheaper way
+     - Instances in private subnets should be able to reach addresses outside the VPC
    - **Documentation (5 points)**
-   - Document the infrastructure setup and usage in a README file.
+     - Document the infrastructure setup and usage in a README file.
    - **Submission (5 points)**
-   - A GitHub Actions (GHA) pipeline is passing
-   - **Secure authorization (10 points)**
-   - IAM role with correct Identity-based and Trust policies used to connect GitHubActions to AWS.
+   - A GitHub Actions (GHA) pipeline is set up for the Terraform code.
+
+## References
+
+#### Simpler way
+
+Elastic IP:
+
+- https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html
+
+Route table association:
+
+- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/main_route_table_association
+
+NAT vs Internet Gateway:
+
+- https://stackoverflow.com/questions/74455063/what-exactly-are-nat-gateway-and-internet-gateway-on-aws
+
+Configuration EC2 with private subnets:
+
+- https://medium.com/@prabhupj/terraform-way-to-run-aws-ec2-instances-in-a-private-subnet-and-load-balancing-with-an-application-98da5a11d4f1
+
+#### Cheaper way
+
+Making EC2 a NAT gateway:
+
+- https://medium.com/nerd-for-tech/how-to-turn-an-amazon-linux-2023-ec2-into-a-nat-instance-4568dad1778f
+
+Configuration of NAT with multiple interfaces:
+
+- It is needed to provide an interface by VPC and consume the interface by the Bastion host
+- https://people.computing.clemson.edu/~jmarty/courses/LinuxStuff/SetupNATWIthIpTables.pdf
+- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_interface
+
+iptables:
+
+- https://linux.die.net/man/8/iptables
+
+Logs for troubleshooting user-data:
+
+- https://stackoverflow.com/questions/15904095/how-to-check-whether-my-user-data-passing-to-ec2-instance-is-working
+- /var/log/cloud-init.log
+- /var/log/cloud-init-output.log
