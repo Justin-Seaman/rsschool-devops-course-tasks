@@ -74,3 +74,7 @@ variable "availability_zones" {
   default     = ["us-east-2a", "us-east-2b"]
   description = "List of availability zones to use for the VPC"
 }
+variable "nat_gw_private_ip" {
+  type    = string
+  default = "10.0.1.5"
+}

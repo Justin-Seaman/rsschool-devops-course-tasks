@@ -56,3 +56,47 @@ resource "aws_internet_gateway" "jsrs-igw" {
     Name = "jsrs-igw"
   }
 }
+# Route Table for Public Subnets
+resource "aws_route_table" "public-route-table" {
+  vpc_id = aws_vpc.jsrs-vpc.id
+  tags = {
+    Name = "public-route-table"
+  }
+}
+# Route the public subnet traffic through the Internet Gateway
+resource "aws_route" "public-internet-igw-route" {
+  route_table_id         = aws_route_table.public-route-table.id
+  gateway_id             = aws_internet_gateway.jsrs-igw.id
+  destination_cidr_block = "0.0.0.0/0"
+}
+# Route Table for Private Subnets
+resource "aws_route_table" "private-route-table" {
+  vpc_id = aws_vpc.jsrs-vpc.id
+  tags = {
+    Name = "private-route-table"
+  }
+}
+# Route NAT Gateway
+resource "aws_route" "nat-ngw-route" {
+  route_table_id         = aws_route_table.private-route-table.id
+  network_interface_id   = aws_instance.nat-gw_ubuntu.primary_network_interface_id
+  destination_cidr_block = "0.0.0.0/0"
+}
+
+# Associate the newly created route tables to the subnets
+resource "aws_route_table_association" "public-route-1-association" {
+  route_table_id = aws_route_table.public-route-table.id
+  subnet_id      = aws_subnet.jsrs-az1-pub1.id
+}
+resource "aws_route_table_association" "public-route-2-association" {
+  route_table_id = aws_route_table.public-route-table.id
+  subnet_id      = aws_subnet.jsrs-az2-pub1.id
+}
+resource "aws_route_table_association" "private-route-1-association" {
+  route_table_id = aws_route_table.private-route-table.id
+  subnet_id      = aws_subnet.jsrs-az1-priv1.id
+}
+resource "aws_route_table_association" "private-route-2-association" {
+  route_table_id = aws_route_table.private-route-table.id
+  subnet_id      = aws_subnet.jsrs-az2-priv1.id
+}
