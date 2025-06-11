@@ -53,12 +53,12 @@ In this task, you will write Terraform code to configure the basic networking in
 
 ### Subnet configuration:
 
-|  Name           |  CIDR              |
-|  -------------- |  ----------------- |
-|  az1_pub(1)     |  10.1.1.0/24       |
-|  az1_priv(1)    |  10.1.101.0/24     |
-|  az2_pub(1)     |  10.2.1.0/24       |
-|  az2_priv(1)    |  10.2.101.0/24     |
+|  Name:          |  CIDR:           |
+|  -------------- |  --------------- |
+|  az1_pub(1)     |  10.0.1.0/24     |
+|  az1_priv(1)    |  10.0.2.0/24     |
+|  az2_pub(1)     |  10.0.3.0/24     |
+|  az2_priv(1)    |  10.0.4.0/24     |
 
 2. **Organize Code**
 

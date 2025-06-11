@@ -47,25 +47,25 @@ variable "vpc_cidr" {
 
 variable "az1_pub1_cidr" {
   type        = string
-  default     = "10.1.1.0/24"
+  default     = "10.0.1.0/24"
   description = "CIDR block for public subnet in AZ1"
 }
 
 variable "az1_priv1_cidr" {
   type        = string
-  default     = "10.1.101.0/24"
+  default     = "10.0.2.0/24"
   description = "CIDR block for private subnet in AZ1"
 }
 
 variable "az2_pub1_cidr" {
   type        = string
-  default     = "10.2.1.0/24"
+  default     = "10.0.3.0/24"
   description = "CIDR block for public subnet in AZ2"
 }
 
 variable "az2_priv1_cidr" {
   type        = string
-  default     = "10.2.101.0/24"
+  default     = "10.0.4.0/24"
   description = "CIDR block for private subnet in AZ1"
 }
 
