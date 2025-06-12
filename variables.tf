@@ -78,3 +78,8 @@ variable "nat_gw_private_ip" {
   type    = string
   default = "10.0.1.5"
 }
+variable "home_cidr" {
+  type        = string
+  default     = "173.63.75.129/32"
+  description = "CIDR block for home network to allow SSH access"
+}

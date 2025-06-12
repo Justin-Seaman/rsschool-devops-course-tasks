@@ -1,4 +1,4 @@
-# Public Security Group
+# INIT: Public Security Group
 resource "aws_security_group" "sec_grp-public" {
   name        = "sec_grp-public"
   description = "Controls access to public resources"
@@ -6,44 +6,85 @@ resource "aws_security_group" "sec_grp-public" {
   tags = {
     Name = "sec_grp-public"
   }
-
-  #Allow SSH in from anywhere
-  ingress {
-    from_port   = 0
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow HTTPS out to anywhere
-  egress {
-    from_port   = 0
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+}
+# INGRESS: Public Security Group Ingress Rule for All internet Traffic
+resource "aws_vpc_security_group_ingress_rule" "pub_allow_in_inside" {
+  security_group_id = aws_security_group.sec_grp-public.id
+  cidr_ipv4         = var.vpc_cidr # Allow traffic from within the VPC
+  from_port         = 0
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = 0
+}
+# INGRESS: Public Security Group Engress Rule for SSH
+resource "aws_vpc_security_group_ingress_rule" "pub_allow_in_ssh" {
+  security_group_id  = aws_security_group.sec_grp-public.id
+  cidr_ipv4          = var.home_cidr
+  from_port          = 22
+  ip_protocol        = "tcp" # -1 means all protocols
+  to_port            = 22
+}
+# EGRESS: Public Security Group Engress Rule for All inside VPC Traffic
+resource "aws_vpc_security_group_egress_rule" "pub_allow_out_inside" {
+  security_group_id = aws_security_group.sec_grp-public.id
+  cidr_ipv4         = var.vpc_cidr # Allow traffic to within the VPC
+  from_port         = 0
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = 0
+}
+# EGRESS: Public Security Group Engress Rule for HTTPS
+resource "aws_vpc_security_group_egress_rule" "pub_allow_out_https" {
+  security_group_id = aws_security_group.sec_grp-public.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 443
+  ip_protocol       = "tcp"
+  to_port           = 443
 }
 
-# Priavte Security Group
+# INIT: Priavte Security Group
 resource "aws_security_group" "sec_grp-private" {
-  name        = "sec_grp-private"
-  description = "Controls access to private resources"
-  vpc_id      = aws_vpc.jsrs-vpc.id
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  name              = "sec_grp-private"
+  description       = "Controls access to private resources"
+  vpc_id            = aws_vpc.jsrs-vpc.id
   tags = {
     Name = "sec_grp-private"
   }
+}
+# INGRESS: Private Security Group Ingress Rule for AZ1_Priv1
+resource "aws_vpc_security_group_ingress_rule" "pub_allow_in_inside" {
+  security_group_id = aws_security_group.sec_grp-private.id
+  cidr_ipv4         = var.az1_priv1_cidr
+  from_port         = 0
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = 0
+}
+# INGRESS: Private Security Group Ingress Rule for AZ2_Priv1
+resource "aws_vpc_security_group_ingress_rule" "pub_allow_in_inside" {
+  security_group_id = aws_security_group.sec_grp-private.id
+  cidr_ipv4         = var.az2_priv1_cidr
+  from_port         = 0
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = 0
+}
+# EGRESS: Private Security Group Engress Rule for az1_priv1 Traffic
+resource "aws_vpc_security_group_egress_rule" "pub_allow_out_inside" {
+  security_group_id = aws_security_group.sec_grp-private.id
+  cidr_ipv4         = var.az1_priv1_cidr
+  from_port         = 0
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = 0
+}# EGRESS: Private Security Group Engress Rule for az2_priv1 Traffic
+resource "aws_vpc_security_group_egress_rule" "pub_allow_out_inside" {
+  security_group_id = aws_security_group.sec_grp-private.id
+  cidr_ipv4         = var.az2_priv1_cidr
+  from_port         = 0
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = 0
+}
+}# EGRESS: Private Security Group Engress Rule for All traffic to NAT Gateway
+resource "aws_vpc_security_group_egress_rule" "pub_allow_out_inside" {
+  security_group_id = aws_security_group.sec_grp-private.id
+  cidr_ipv4         = var.nat_gw_private_ip
+  from_port         = 0
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = 0
 }
