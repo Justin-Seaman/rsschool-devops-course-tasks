@@ -100,3 +100,12 @@ resource "aws_route_table_association" "private-route-2-association" {
   route_table_id = aws_route_table.private-route-table.id
   subnet_id      = aws_subnet.jsrs-az2-priv1.id
 }
+# Elastic IP For NAT Gateway
+resource "aws_eip" "nat-gw-eip" {
+  instance = aws_instance.nat-gw_ubuntu.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "nat-gw-eip"
+  }
+}
