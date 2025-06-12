@@ -78,8 +78,22 @@ variable "nat_gw_private_ip" {
   type    = string
   default = "10.0.1.5"
 }
+variable "priavte-vm_private_ip" {
+  type    = string
+  default = "10.0.2.10"
+}
 variable "home_cidr" {
   type        = string
   default     = "173.63.75.129/32"
   description = "CIDR block for home network to allow SSH access"
+}
+variable "ssh_keypair_name" {
+  type        = string
+  default     = "ssh-ubuntu-kp"
+  description = "Key pair name for SSH access to the instance"
+}
+variable "ssh_keypair_public_key" {
+  type        = string
+  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHCPJh9tPWLz5k/kKTSEOatmM0wxyVqBOBgGKN8Qrd2o jseaman@EPUSPRIW0847"
+  description = "Key pair pubkey for SSH access to the instance"
 }

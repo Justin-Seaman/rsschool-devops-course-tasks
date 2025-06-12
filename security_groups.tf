@@ -31,6 +31,14 @@ resource "aws_vpc_security_group_egress_rule" "pub_allow_out_inside" {
   ip_protocol       = "-1" # -1 means all protocols
   to_port           = -1
 }
+# EGRESS: Public Security Group Engress Rule for HTTP
+resource "aws_vpc_security_group_egress_rule" "pub_allow_out_http" {
+  security_group_id = aws_security_group.sec_grp-public.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 80
+  ip_protocol       = "tcp"
+  to_port           = 80
+}
 # EGRESS: Public Security Group Engress Rule for HTTPS
 resource "aws_vpc_security_group_egress_rule" "pub_allow_out_https" {
   security_group_id = aws_security_group.sec_grp-public.id
