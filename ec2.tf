@@ -16,11 +16,12 @@ resource "aws_key_pair" "ubuntu-kp" {
   key_name   = var.ssh_keypair_name
   public_key = var.ssh_keypair_public_key
 }
-/*resource "aws_instance" "priv_ubuntu" {
+resource "aws_instance" "priv_ubuntu" {
   ami           = "ami-004364947f82c87a0"
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.jsrs-az1-priv1.id
   private_ip    = var.priavte-vm_private_ip
+  key_name      = var.ssh_keypair_name
   vpc_security_group_ids = [
     aws_security_group.sec_grp-private.id
   ]
@@ -28,4 +29,3 @@ resource "aws_key_pair" "ubuntu-kp" {
     Name = "PRIVATE-Ubuntu"
   }
 }
-*/
