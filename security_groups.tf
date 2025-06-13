@@ -7,7 +7,7 @@ resource "aws_security_group" "sec_grp-public" {
     Name = "sec_grp-public"
   }
 }
-# INGRESS: Public Security Group Ingress Rule for All internet Traffic
+# INGRESS: Public Security Group Ingress Rule for All inside Traffic
 resource "aws_vpc_security_group_ingress_rule" "pub_allow_in_inside" {
   security_group_id = aws_security_group.sec_grp-public.id
   cidr_ipv4         = var.vpc_cidr # Allow traffic from within the VPC
@@ -47,7 +47,14 @@ resource "aws_vpc_security_group_egress_rule" "pub_allow_out_https" {
   ip_protocol       = "tcp"
   to_port           = 443
 }
-
+# EGRESS: Public Security Group Engress Rule for ALL TRAFFIC
+resource "aws_vpc_security_group_egress_rule" "pub_allow_out_all" {
+  security_group_id = aws_security_group.sec_grp-public.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = -1
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = -1
+}
 # INIT: Priavte Security Group
 resource "aws_security_group" "sec_grp-private" {
   name        = "sec_grp-private"
@@ -88,7 +95,8 @@ resource "aws_vpc_security_group_egress_rule" "priv_allow_out_az1_priv1" {
   from_port         = -1
   ip_protocol       = "-1" # -1 means all protocols
   to_port           = -1
-} # EGRESS: Private Security Group Engress Rule for az2_priv1 Traffic
+}
+# EGRESS: Private Security Group Engress Rule for az2_priv1 Traffic
 resource "aws_vpc_security_group_egress_rule" "priv_allow_out_az2_priv1" {
   security_group_id = aws_security_group.sec_grp-private.id
   cidr_ipv4         = var.az2_priv1_cidr
@@ -104,3 +112,11 @@ resource "aws_vpc_security_group_egress_rule" "priv_allow_out_nat_gw" {
   ip_protocol       = "-1" # -1 means all protocols
   to_port           = -1
 }
+# EGRESS: Private Security Group Engress Rule for az1_priv1 Traffic
+resource "aws_vpc_security_group_egress_rule" "priv_allow_out_all" {
+  security_group_id = aws_security_group.sec_grp-private.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = -1
+  ip_protocol       = "-1" # -1 means all protocols
+  to_port           = -1
+} 

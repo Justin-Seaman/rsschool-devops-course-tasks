@@ -76,13 +76,6 @@ resource "aws_route_table" "private-route-table" {
     Name = "private-route-table"
   }
 }
-# Route NAT Gateway
-resource "aws_route" "nat-ngw-route" {
-  route_table_id         = aws_route_table.private-route-table.id
-  network_interface_id   = aws_instance.nat-gw_ubuntu.primary_network_interface_id
-  destination_cidr_block = "0.0.0.0/0"
-}
-
 # Associate the newly created route tables to the subnets
 resource "aws_route_table_association" "public-route-1-association" {
   route_table_id = aws_route_table.public-route-table.id
@@ -100,12 +93,8 @@ resource "aws_route_table_association" "private-route-2-association" {
   route_table_id = aws_route_table.private-route-table.id
   subnet_id      = aws_subnet.jsrs-az2-priv1.id
 }
-# Elastic IP For NAT Gateway
-resource "aws_eip" "nat-gw-eip" {
-  instance = aws_instance.nat-gw_ubuntu.id
-  domain   = "vpc"
-
-  tags = {
-    Name = "nat-gw-eip"
-  }
+# Key Pair for SSH Access
+resource "aws_key_pair" "ubuntu-kp" {
+  key_name   = var.ssh_keypair_name
+  public_key = var.ssh_keypair_public_key
 }
