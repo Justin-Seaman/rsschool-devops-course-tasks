@@ -73,6 +73,14 @@ resource "aws_vpc_security_group_ingress_rule" "priv_allow_in_az2_priv1" {
   ip_protocol       = "-1" # -1 means all protocols
   to_port           = -1
 }
+# INGRESS: Private Security Group Ingress Rule for ssh bastion host
+resource "aws_vpc_security_group_ingress_rule" "priv_allow_in_az2_priv1" {
+  security_group_id = aws_security_group.sec_grp-private.id
+  cidr_ipv4         = var.nat_gw_private_ip
+  from_port         = 22
+  ip_protocol       = "tcp" 
+  to_port           = 22
+}
 # EGRESS: Private Security Group Engress Rule for az1_priv1 Traffic
 resource "aws_vpc_security_group_egress_rule" "priv_allow_out_az1_priv1" {
   security_group_id = aws_security_group.sec_grp-private.id
