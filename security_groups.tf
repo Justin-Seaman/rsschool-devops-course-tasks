@@ -78,7 +78,7 @@ resource "aws_vpc_security_group_ingress_rule" "priv_allow_in_az2_priv1" {
   security_group_id = aws_security_group.sec_grp-private.id
   cidr_ipv4         = var.nat_gw_private_ip
   from_port         = 22
-  ip_protocol       = "tcp" 
+  ip_protocol       = "tcp"
   to_port           = 22
 }
 # EGRESS: Private Security Group Engress Rule for az1_priv1 Traffic
