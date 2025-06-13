@@ -79,6 +79,11 @@ variable "nat_gw_private_ip" {
   type    = string
   default = "10.0.1.5"
 }
+# Bastion Private IP
+variable "bastion_ip" {
+  type    = string
+  default = "10.0.1.5"
+}
 # K3s Control Plane Private IP
 variable "k3-ctrl_private_ip" {
   type    = string
@@ -90,7 +95,7 @@ variable "home_cidr" {
   default     = "173.63.75.129/32"
   description = "CIDR block for home network to allow SSH access"
 }
-# SSH Key Pair Namefor EC2 Instances
+# SSH Key Pair Name for EC2 Instances
 variable "ssh_keypair_name" {
   type        = string
   default     = "ssh-ubuntu-kp"

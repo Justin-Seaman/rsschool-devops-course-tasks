@@ -7,26 +7,14 @@ resource "aws_security_group" "sec_grp-private" {
     Name = "sec_grp-private"
   }
 }
-# INGRESS: Private Security Group Ingress Rule for AZ1_Priv1
-resource "aws_vpc_security_group_ingress_rule" "priv_allow_in_az1_priv1" {
+# INGRESS: Private Security Group Ingress Rule for VPC
+resource "aws_vpc_security_group_ingress_rule" "priv_allow_in_vpc" {
   tags = {
-    Name = "az1-priv1-all"
+    Name = "vpc-all"
   }
-  description       = "Allow all access from AZ1-PRIV1 network"
+  description       = "Allow all access from VPC network"
   security_group_id = aws_security_group.sec_grp-private.id
-  cidr_ipv4         = var.az1_priv1_cidr
-  from_port         = -1
-  ip_protocol       = "-1" # -1 means all protocols
-  to_port           = -1
-}
-# INGRESS: Private Security Group Ingress Rule for AZ2_Priv1
-resource "aws_vpc_security_group_ingress_rule" "priv_allow_in_az2_priv1" {
-  tags = {
-    Name = "az2-priv1-all"
-  }
-  description       = "Allow all access from AZ2-PRIV1 network"
-  security_group_id = aws_security_group.sec_grp-private.id
-  cidr_ipv4         = var.az2_priv1_cidr
+  cidr_ipv4         = var.vpc_cidr
   from_port         = -1
   ip_protocol       = "-1" # -1 means all protocols
   to_port           = -1
@@ -38,31 +26,19 @@ resource "aws_vpc_security_group_ingress_rule" "priv_allow_ssh_bastion" {
   }
   description       = "Allow SSH from bastion host"
   security_group_id = aws_security_group.sec_grp-private.id
-  cidr_ipv4         = "${var.nat_gw_private_ip}/32"
+  cidr_ipv4         = "${var.bastion_ip}/32"
   from_port         = 22
   ip_protocol       = "tcp"
   to_port           = 22
 }
-# EGRESS: Private Security Group Egress Rule for AZ1_PRIV1 Traffic
-resource "aws_vpc_security_group_egress_rule" "priv_allow_out_az1_priv1" {
+# EGRESS: Private Security Group Egress Rule for VPC Traffic
+resource "aws_vpc_security_group_egress_rule" "priv_allow_out_vpc" {
   tags = {
-    Name = "all-az1-priv1"
+    Name = "all-vpc"
   }
-  description       = "Allow all access to AZ1-PRIV1 network"
+  description       = "Allow all access to VPC network"
   security_group_id = aws_security_group.sec_grp-private.id
-  cidr_ipv4         = var.az1_priv1_cidr
-  from_port         = -1
-  ip_protocol       = "-1" # -1 means all protocols
-  to_port           = -1
-}
-# EGRESS: Private Security Group Egress Rule for AZ2_PRIV1 Traffic
-resource "aws_vpc_security_group_egress_rule" "priv_allow_out_az2_priv1" {
-  tags = {
-    Name = "all-az2-priv1"
-  }
-  description       = "Allow all access to AZ2-PRIV1 network"
-  security_group_id = aws_security_group.sec_grp-private.id
-  cidr_ipv4         = var.az2_priv1_cidr
+  cidr_ipv4         = var.vpc_cidr
   from_port         = -1
   ip_protocol       = "-1" # -1 means all protocols
   to_port           = -1

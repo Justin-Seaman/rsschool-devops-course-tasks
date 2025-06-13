@@ -33,9 +33,87 @@ On push to main branch, GitHub Actions will run based on yml action file in .git
 + MFA required
 + Region = us-east-2
 
-# Process
+## Network Overview
 
-# Task 2: Basic Infrastructure Configuration
+### VPC CIDR Block
++ 10.0.0.0/16
+
+### Subnet CIDR Block(s)
+
+|  Name:            |  CIDR:           |
+|  ---------------- |  --------------- |
+|  **az1_pub1**     |  10.0.1.0/24     |
+|  **az1_priv1**    |  10.0.2.0/24     |
+|  **az2_pub1**     |  10.0.3.0/24     |
+|  **az2_priv1**    |  10.0.4.0/24     |
+
+### Routes
+
++ Public Route Table
+  + Default route to AWS Internet Gateway
+  + Route VPC subnet to `local`
++ Private Route Table
+  + Default route to Elastic Interface of NAT-Gateway
+  + Route VPC subnet to `local`
+
+### Security Groups
+
++ Public Security Group
+  + Allow SSH **in** from Home IP Address ONLY (Defined in variables).
+  + Allow all VPC private IPs **in** on all protos
+  + ALlow all traffic **out** to WAN.
+  + Allow all traffic **out** to VPC.
++ Private Security Group
+  + Allow all traffic **in** from AZ1 and AZ2 Private subnets
+  + Allow SSH **in** from bastion host ip
+  + Allow all traffic **out** to WAN
+  + Allow all traffic **out** to NAT-GW IP
+  + Allow all traffic **out** to AZ1 and AZ2 Private subnets
+
+## EC2 Instances
+
++ NAT Gateway
+  + Subnet: AZ1-PUB1
+  + IP: 10.0.1.5
+  + Purpose: Perform NAT translation for private subnets to allow traffic out
+  + Configuration: Handled with script in user-data field of EC2 Terraform config:
+    + Enables IP Forward, Installs IPTables Persistence, apt update/upgrade, enables ip masquerading on firewall, enables and starts nftables.
+
+```bash
+#!/bin/bash
+echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+sysctl -p
+
+export DEBIAN_FRONTEND=noninteractive
+echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
+echo iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections
+
+apt-get update -y
+apt-get upgrade -y
+apt-get install -y iptables-persistent nftables
+
+iptables -t nat -A POSTROUTING -o enX0 -s 0.0.0.0/0 -j MASQUERADE
+netfilter-persistent save
+nft list ruleset | tee /etc/nftables.conf > /dev/null
+
+systemctl enable nftables
+systemctl start nftables
+```
+
++ Bastion Host
+  + Recycling NAT-GW to save on EC2 hours
+  + IP: 10.0.1.5
+  + EC2 Instance within Public Subnet which has a public IP included in security groups to allow SSH to Private Subnets
+
++ Private Subnet Instance
+  + A test machine to confirm that NAT GW allows traffic to WAN
+  + Configuration: Important to manage with aws_key_pair, as EC2 Instance Connect and other forms of on-platform remoting will be more difficult in private IP. Use bastion host to SSH in (must copy SSH private key across to bastion host for auth).
+
+---
+
+## Process Log
+
+## Task 2: Basic Infrastructure Configuration
 
 ![task_2](.visual_assets/task_2.png)
 
@@ -77,21 +155,34 @@ In this task, you will write Terraform code to configure the basic networking in
 
 4. **Additional Tasks💫**
    - Implement security groups.
+
 ## Security Groups
+
 ### Public Security Group
+
 #### Ingress
+
 ![pub-in](.visual_assets\pub-in.png)
+
 #### Egress
+
 ![pub-out](.visual_assets\pub-out.png)
+
 ### Private Security Group
+
 #### Ingress
+
 ![priv-in](.visual_assets\priv-in.png)
+
 #### Egress
+
 ![priv-out](.visual_assets\priv-out.png)
+
    - Create a bastion host for secure access to the private subnets.
+     + Re-using ec2 nat-gw for SSH access to private subnet. Private key required for ssh.
    - Organize NAT for private subnets, so instances in the private subnet can connect with the outside world:
-     - Simpler way: create a NAT Gateway
-     - Cheaper way: configure a NAT instance in the public subnet
+     - Simpler way: create a NAT Gateway ❌
+     - Cheaper way: configure a NAT instance in the public subnet ✅
    - Document the infrastructure setup and usage in a README file.
 
 ## Submission
