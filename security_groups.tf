@@ -74,7 +74,7 @@ resource "aws_vpc_security_group_ingress_rule" "priv_allow_in_az2_priv1" {
   to_port           = -1
 }
 # INGRESS: Private Security Group Ingress Rule for ssh bastion host
-resource "aws_vpc_security_group_ingress_rule" "priv_allow_in_az2_priv1" {
+resource "aws_vpc_security_group_ingress_rule" "priv_allow_ssh_bastion" {
   security_group_id = aws_security_group.sec_grp-private.id
   cidr_ipv4         = var.nat_gw_private_ip
   from_port         = 22
