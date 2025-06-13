@@ -10,7 +10,12 @@ Deploying CI/CD changes via Terraform configuration files to test Infastructure 
 + *oidc.tf* - establishes OIDC trust relationship between AWS and GitHub. Only allowed for owner and repo set in variables.
 + *iam-gh_actions_role.tf* - grants FullAccess to core AWS Services to the role used for GitHub Actions OIDC.
 + *s3.tf* - Handles creation of s3 bucket for shared tf state.
-+ *vpc.tf* - Handles creation of VPC, subnets, IG, and routing
++ *dynamodb.tf* - Handles creation of DynamoDB for tf locking.
++ *vpc.tf* - Handles creation of VPC, subnets, IG, and base routing
++ *pub-sg.tf* - Handles creation of Security Group for Public Subnets
++ *priv-sg.tf* - Handles creation of Security Group for Private Subnets
++ *ec2.tf* - Handles creation of underlying EC2 instances and associated routing for Nat Gateway. 
+  + **Block Comment out this file to tear-down EC2 instances and budget 750 free-tier hours (handled on local, not in repo)**
 
 ## GitHub Actions Files
 
@@ -53,12 +58,12 @@ In this task, you will write Terraform code to configure the basic networking in
 
 ### Subnet configuration:
 
-|  Name:          |  CIDR:           |
-|  -------------- |  --------------- |
-|  az1_pub(1)     |  10.0.1.0/24     |
-|  az1_priv(1)    |  10.0.2.0/24     |
-|  az2_pub(1)     |  10.0.3.0/24     |
-|  az2_priv(1)    |  10.0.4.0/24     |
+|  Name:            |  CIDR:           |
+|  ---------------- |  --------------- |
+|  **az1_pub1**     |  10.0.1.0/24     |
+|  **az1_priv1**    |  10.0.2.0/24     |
+|  **az2_pub1**     |  10.0.3.0/24     |
+|  **az2_priv1**    |  10.0.4.0/24     |
 
 2. **Organize Code**
 
@@ -72,6 +77,17 @@ In this task, you will write Terraform code to configure the basic networking in
 
 4. **Additional Tasks💫**
    - Implement security groups.
+## Security Groups
+### Public Security Group
+#### Ingress
+![pub-in](.visual_assets\pub-in.png)
+#### Egress
+![pub-out](.visual_assets\pub-out.png)
+### Private Security Group
+#### Ingress
+![priv-in](.visual_assets\priv-in.png)
+#### Egress
+![priv-out](.visual_assets\priv-out.png)
    - Create a bastion host for secure access to the private subnets.
    - Organize NAT for private subnets, so instances in the private subnet can connect with the outside world:
      - Simpler way: create a NAT Gateway

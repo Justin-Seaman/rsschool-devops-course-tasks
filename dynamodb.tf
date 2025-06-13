@@ -14,4 +14,7 @@ resource "aws_dynamodb_table" "jsrslock_create" {
   tags = {
     Name = "jsrslock"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
