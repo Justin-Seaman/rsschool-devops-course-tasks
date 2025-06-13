@@ -183,7 +183,7 @@ In this task, you will write Terraform code to configure the basic networking in
    - Organize NAT for private subnets, so instances in the private subnet can connect with the outside world:
      - Simpler way: create a NAT Gateway ❌
      - Cheaper way: configure a NAT instance in the public subnet ✅
-   - Document the infrastructure setup and usage in a README file.
+   - Document the infrastructure setup and usage in a README file. ✅
 
 ## Submission
 
@@ -198,13 +198,13 @@ In this task, you will write Terraform code to configure the basic networking in
 1. **Terraform Code Implementation (50 points)**
 
    - Terraform code is created to configure the following:
-     - VPC
-     - 2 public subnets in different AZs
-     - 2 private subnets in different AZs
-     - Internet Gateway
-     - Routing configuration:
+     - VPC ✅
+     - 2 public subnets in different AZs ✅
+     - 2 private subnets in different AZs ✅
+     - Internet Gateway ✅
+     - Routing configuration: 
        - Instances in all subnets can reach each other
-       - Instances in public subnets can reach addresses outside the VPC and vice-versa
+       - Instances in public subnets can reach addresses outside the VPC and vice-versa 
 
 2. **Code Organization (10 points)**
 
