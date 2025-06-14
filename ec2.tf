@@ -48,8 +48,8 @@ resource "aws_route" "nat-ngw-route" {
   network_interface_id   = aws_instance.nat-gw_ubuntu.primary_network_interface_id
   destination_cidr_block = "0.0.0.0/0"
 }
-# Private Subnet Test Instance (eventual K3s Control Plane)
-resource "aws_instance" "priv_k3s_ubuntu" {
+# Private Subnet Test Instance (K3s Control Plane)
+resource "aws_instance" "priv_k3s_cp_ubuntu" {
   ami           = "ami-004364947f82c87a0"
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.jsrs-az1-priv1.id
@@ -67,5 +67,26 @@ resource "aws_instance" "priv_k3s_ubuntu" {
                 EOF
   tags = {
     Name = "AZ1-PRIV1-K3S_C-Ubuntu"
+  }
+}
+# Private Subnet Test Instance (K3s HA Node Plane)
+resource "aws_instance" "priv_k3s_node_ubuntu" {
+  ami           = "ami-004364947f82c87a0"
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.jsrs-az2-priv1.id
+  private_ip    = var.k3-node_private_ip
+  key_name      = var.ssh_keypair_name
+  vpc_security_group_ids = [
+    aws_security_group.sec_grp-private.id
+  ]
+  user_data = <<-EOF
+                #!/bin/bash
+                export DEBIAN_FRONTEND=noninteractive
+
+                apt-get update -y
+                apt-get upgrade -y
+                EOF
+  tags = {
+    Name = "AZ2-PRIV1-K3S_N1-Ubuntu"
   }
 }

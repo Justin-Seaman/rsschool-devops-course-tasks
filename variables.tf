@@ -89,6 +89,11 @@ variable "k3-ctrl_private_ip" {
   type    = string
   default = "10.0.2.10"
 }
+# K3s Node Private IP
+variable "k3-node_private_ip" {
+  type    = string
+  default = "10.0.4.10"
+}
 # SSH Access IP CIDR (Needed for SG rules to SSH into Bastion Host)
 variable "home_cidr" {
   type        = string

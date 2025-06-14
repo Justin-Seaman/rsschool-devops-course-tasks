@@ -1,4 +1,4 @@
-# VPC
+# VPC Definition
 resource "aws_vpc" "jsrs-vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -35,7 +35,7 @@ resource "aws_subnet" "jsrs-az2-pub1" {
   availability_zone = var.availability_zones[1]
 
   tags = {
-    Name = "jsrs-az1-pub1"
+    Name = "jsrs-az2-pub1"
   }
 }
 # Private Subnet in AZ2
@@ -45,7 +45,7 @@ resource "aws_subnet" "jsrs-az2-priv1" {
   availability_zone = var.availability_zones[1]
 
   tags = {
-    Name = "jsrs-az1-pub1"
+    Name = "jsrs-az2-pub1"
   }
 }
 #Internet Gateway for Public Subnets
@@ -76,6 +76,7 @@ resource "aws_route_table" "private-route-table" {
     Name = "private-route-table"
   }
 }
+
 # Associate the newly created route tables to the subnets
 resource "aws_route_table_association" "public-route-1-association" {
   route_table_id = aws_route_table.public-route-table.id
@@ -93,6 +94,7 @@ resource "aws_route_table_association" "private-route-2-association" {
   route_table_id = aws_route_table.private-route-table.id
   subnet_id      = aws_subnet.jsrs-az2-priv1.id
 }
+
 # Key Pair for SSH Access
 resource "aws_key_pair" "ubuntu-kp" {
   key_name   = var.ssh_keypair_name

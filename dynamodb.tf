@@ -1,3 +1,4 @@
+# Create DynamoDB Table for Terraform Locking
 resource "aws_dynamodb_table" "jsrslock_create" {
   name           = var.tf_lock_db
   hash_key       = "LockID"
