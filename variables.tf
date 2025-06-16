@@ -112,3 +112,15 @@ variable "ssh_keypair_public_key" {
   default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHCPJh9tPWLz5k/kKTSEOatmM0wxyVqBOBgGKN8Qrd2o jseaman@EPUSPRIW0847"
   description = "Key pair pubkey for SSH access to the instance"
 }
+# K3s Control Plane Node NAme
+variable "Control_Plane_Node_Name" {
+  type        = string
+  default     = "cp-node"
+  description = "Name of the K3s control plane node"
+}
+# K3s Worker1 Node Name
+variable "Worker1_Node_Name" {
+  type        = string
+  default     = "worker1-node"
+  description = "Name of the first K3s worker node"
+}

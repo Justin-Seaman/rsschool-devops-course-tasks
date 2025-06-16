@@ -25,9 +25,14 @@ jobs:
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::584296377309:role/GithubActionsRole
-
+      
       - name: Initialize Terraform
         id: terraform_init
+        env:
+          TF_VAR_SQL_User: ${{ secrets.SQL_USER }}
+          TF_VAR_SQL_Password: ${{ secrets.SQL_PASSWORD }}
+          TF_VAR_SQL_Database: ${{ secrets.SQL_DATABASE }}
+          TF_VAR_Cluster_Token: ${{ secrets.CLUSTER_TOKEN }}
         run: terraform fmt -check
           
   terraform-plan:
@@ -49,6 +54,11 @@ jobs:
 
       - name: Plan Terraform
         id: terraform_plan
+        env:
+          TF_VAR_SQL_User: ${{ secrets.SQL_USER }}
+          TF_VAR_SQL_Password: ${{ secrets.SQL_PASSWORD }}
+          TF_VAR_SQL_Database: ${{ secrets.SQL_DATABASE }}
+          TF_VAR_Cluster_Token: ${{ secrets.CLUSTER_TOKEN }}
         run: |
           terraform init
           terraform plan
@@ -72,6 +82,11 @@ jobs:
 
       - name: Apply Terraform
         id: terraform_apply
+        env:
+          TF_VAR_SQL_User: ${{ secrets.SQL_USER }}
+          TF_VAR_SQL_Password: ${{ secrets.SQL_PASSWORD }}
+          TF_VAR_SQL_Database: ${{ secrets.SQL_DATABASE }}
+          TF_VAR_Cluster_Token: ${{ secrets.CLUSTER_TOKEN }}
         run: |
           terraform init
           terraform plan

@@ -11,13 +11,18 @@ resource "aws_instance" "nat-gw_ubuntu" {
   ]
   user_data = <<-EOF
                 #!/bin/bash
+                fallocate -l 1G /swapfile
+                chmod 600 /swapfile
+                mkswap /swapfile
+                swapon /swapfile
+                echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
+                
                 echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
                 sysctl -p
 
                 export DEBIAN_FRONTEND=noninteractive
                 echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
                 echo iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections
-
                 apt-get update -y
                 apt-get upgrade -y
                 apt-get install -y iptables-persistent nftables
@@ -49,44 +54,70 @@ resource "aws_route" "nat-ngw-route" {
   destination_cidr_block = "0.0.0.0/0"
 }
 # Private Subnet Test Instance (K3s Control Plane)
-resource "aws_instance" "priv_k3s_cp_ubuntu" {
+resource "aws_instance" "priv_k3s_ctrlplane_ubuntu" {
   ami           = "ami-004364947f82c87a0"
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.jsrs-az1-priv1.id
   private_ip    = var.k3-ctrl_private_ip
   key_name      = var.ssh_keypair_name
+  depends_on = [
+    aws_instance.nat-gw_ubuntu,
+    aws_db_instance.k3_sql_db
+  ]
   vpc_security_group_ids = [
     aws_security_group.sec_grp-private.id
   ]
   user_data = <<-EOF
                 #!/bin/bash
-                export DEBIAN_FRONTEND=noninteractive
+                fallocate -l 1G /swapfile
+                chmod 600 /swapfile
+                mkswap /swapfile
+                swapon /swapfile
+                echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 
+                export DEBIAN_FRONTEND=noninteractive
                 apt-get update -y
                 apt-get upgrade -y
+                
+                curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --token=${var.Cluster_Token} --node-name=${var.Control_Plane_Node_Name} --datastore-endpoint='postgres://${var.SQL_User}:${var.SQL_Password}@${aws_db_instance.k3_sql_db.address}:5432/${var.SQL_Database}'" sh -
                 EOF
   tags = {
     Name = "AZ1-PRIV1-K3S_C-Ubuntu"
   }
 }
 # Private Subnet Test Instance (K3s HA Node Plane)
-resource "aws_instance" "priv_k3s_node_ubuntu" {
+resource "aws_instance" "priv_k3s_node1_ubuntu" {
   ami           = "ami-004364947f82c87a0"
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.jsrs-az2-priv1.id
   private_ip    = var.k3-node_private_ip
   key_name      = var.ssh_keypair_name
+  depends_on = [
+    aws_instance.nat-gw_ubuntu,
+    aws_db_instance.k3_sql_db,
+    aws_instance.priv_k3s_ctrlplane_ubuntu
+  ]
   vpc_security_group_ids = [
     aws_security_group.sec_grp-private.id
   ]
   user_data = <<-EOF
-                #!/bin/bash
-                export DEBIAN_FRONTEND=noninteractive
+                #!/bin/bash         
+                fallocate -l 1G /swapfile
+                chmod 600 /swapfile
+                mkswap /swapfile
+                swapon /swapfile
+                echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 
+                export DEBIAN_FRONTEND=noninteractive
                 apt-get update -y
                 apt-get upgrade -y
+                
+                curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent --node-name=${var.Worker1_Node_Name}" K3S_URL="https://${var.k3-ctrl_private_ip}:6443" K3S_TOKEN="${var.Cluster_Token}" sh -
                 EOF
   tags = {
     Name = "AZ2-PRIV1-K3S_N1-Ubuntu"
   }
+}
+output "bastion_ip" {
+  value = aws_eip.nat-gw-eip.public_ip
 }
