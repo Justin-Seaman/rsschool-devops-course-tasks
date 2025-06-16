@@ -1,13 +1,13 @@
 resource "aws_db_instance" "k3_sql_db" {
   allocated_storage           = 10
-  db_name                     = var.SQL_Database
+  db_name                     = var.SQL_DATABASE
   engine                      = "postgres"
   engine_version              = "15.12"
   allow_major_version_upgrade = false
   apply_immediately           = false
   instance_class              = "db.t3.micro"
-  username                    = var.SQL_User
-  password                    = var.SQL_Password
+  username                    = var.SQL_USER
+  password                    = var.SQL_PASSWORD
   skip_final_snapshot         = true
   db_subnet_group_name        = aws_db_subnet_group.rds_subnet_group.name
   vpc_security_group_ids      = [aws_security_group.sec_grp-private.id]

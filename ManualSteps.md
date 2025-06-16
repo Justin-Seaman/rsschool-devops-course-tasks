@@ -80,3 +80,14 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 ```
+
++ Killing a process in the middle of terraform plan could cause a locking issue. To address this, perform the following steps:
+  1. Find the status of the lock table 
+  ```ps1
+  aws dynamodb get-item `   
+   --table-name "jsrslock" `
+   --key '{\"LockID\": {\"S\": \"jsrsstate/state/terraform.tfstate\"}}' `
+   --region us-east-2
+  
+  aws dynamodb delete-item ` #Flags above (e.g. --tabl-name "jsrslock")
+  ```

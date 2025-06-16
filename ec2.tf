@@ -79,7 +79,7 @@ resource "aws_instance" "priv_k3s_ctrlplane_ubuntu" {
                 apt-get update -y
                 apt-get upgrade -y
                 
-                curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --token=${var.Cluster_Token} --node-name=${var.Control_Plane_Node_Name} --datastore-endpoint='postgres://${var.SQL_User}:${var.SQL_Password}@${aws_db_instance.k3_sql_db.address}:5432/${var.SQL_Database}'" sh -
+                curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --token=${var.CLUSTER_TOKEN} --node-name=${var.Control_Plane_Node_Name} --datastore-endpoint='postgres://${var.SQL_USER}:${var.SQL_PASSWORD}@${aws_db_instance.k3_sql_db.address}:5432/${var.SQL_DATABASE}'" sh -
                 EOF
   tags = {
     Name = "AZ1-PRIV1-K3S_C-Ubuntu"
@@ -112,7 +112,7 @@ resource "aws_instance" "priv_k3s_node1_ubuntu" {
                 apt-get update -y
                 apt-get upgrade -y
                 
-                curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent --node-name=${var.Worker1_Node_Name}" K3S_URL="https://${var.k3-ctrl_private_ip}:6443" K3S_TOKEN="${var.Cluster_Token}" sh -
+                curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent --node-name=${var.Worker1_Node_Name}" K3S_URL="https://${var.k3-ctrl_private_ip}:6443" K3S_TOKEN="${var.CLUSTER_TOKEN}" sh -
                 EOF
   tags = {
     Name = "AZ2-PRIV1-K3S_N1-Ubuntu"
