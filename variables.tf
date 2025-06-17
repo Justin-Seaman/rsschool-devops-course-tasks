@@ -17,7 +17,7 @@ variable "tf_state_bucket" {
   default     = "jsrsstate"
   description = "Name of s3 bucket for terraform state"
 }
-# Backentd TF LOck DynamoDB Table
+# Backentd TF Lock DynamoDB Table
 variable "tf_lock_db" {
   type        = string
   default     = "jsrslock"
@@ -35,6 +35,23 @@ variable "gh_repo" {
   type        = string
   default     = "rsschool-devops-course-tasks"
   description = "GitHub repo for OIDC trust"
+}
+# Set of IAM policies to attach to the GitHub Actions role
+variable "gha_iam_policy_arn" {
+  type = set(string)
+  default = [
+    "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
+    "arn:aws:iam::aws:policy/AmazonRoute53FullAccess",
+    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+    "arn:aws:iam::aws:policy/IAMFullAccess",
+    "arn:aws:iam::aws:policy/AmazonVPCFullAccess",
+    "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
+    "arn:aws:iam::aws:policy/AmazonEventBridgeFullAccess",
+    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+    "arn:aws:iam::aws:policy/AmazonRDSFullAccess",
+    "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
+  ]
+  description = "Set of IAM policy ARNs for GitHub Actions role"
 }
 
 # Networking:
@@ -123,4 +140,29 @@ variable "Worker1_Node_Name" {
   type        = string
   default     = "worker1-node"
   description = "Name of the first K3s worker node"
+}
+variable "ssm_root" {
+  type        = string
+  default     = "/jsrssecrets"
+  description = "AWS root for SSM parameters"
+}
+variable "db_secret_path" {
+  type        = string
+  default     = "/jsrssecrets/rds/master_password"
+  description = "AWS root for SSM parameters"
+}
+variable "k3s_token_path" {
+  type        = string
+  default     = "/jsrssecrets/k3s/cluster_token"
+  description = "AWS root for SSM parameters"
+}
+variable "db_name_path" {
+  type        = string
+  default     = "/jsrssecrets/rds/database"
+  description = "AWS root for SSM parameters"
+}
+variable "db_user_path" {
+  type        = string
+  default     = "/jsrssecrets/rds/db_user"
+  description = "AWS root for SSM parameters"
 }

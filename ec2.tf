@@ -55,11 +55,12 @@ resource "aws_route" "nat-ngw-route" {
 }
 # Private Subnet Test Instance (K3s Control Plane)
 resource "aws_instance" "priv_k3s_ctrlplane_ubuntu" {
-  ami           = "ami-004364947f82c87a0"
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.jsrs-az1-priv1.id
-  private_ip    = var.k3-ctrl_private_ip
-  key_name      = var.ssh_keypair_name
+  ami                  = "ami-004364947f82c87a0"
+  instance_type        = "t2.micro"
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  subnet_id            = aws_subnet.jsrs-az1-priv1.id
+  private_ip           = var.k3-ctrl_private_ip
+  key_name             = var.ssh_keypair_name
   depends_on = [
     aws_instance.nat-gw_ubuntu,
     aws_db_instance.k3_sql_db
@@ -67,31 +68,29 @@ resource "aws_instance" "priv_k3s_ctrlplane_ubuntu" {
   vpc_security_group_ids = [
     aws_security_group.sec_grp-private.id
   ]
-  user_data = <<-EOF
-                #!/bin/bash
-                fallocate -l 1G /swapfile
-                chmod 600 /swapfile
-                mkswap /swapfile
-                swapon /swapfile
-                echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
-
-                export DEBIAN_FRONTEND=noninteractive
-                apt-get update -y
-                apt-get upgrade -y
-                
-                curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --token=${var.CLUSTER_TOKEN} --node-name=${var.Control_Plane_Node_Name} --datastore-endpoint='postgres://${var.SQL_USER}:${var.SQL_PASSWORD}@${aws_db_instance.k3_sql_db.address}:5432/${var.SQL_DATABASE}'" sh -
-                EOF
+  user_data = templatefile("${path.module}/k3s.tpl", {
+    k3s_token_path   = var.k3s_token_path
+    aws_region       = var.aws_region
+    control_plane    = "true"
+    control_plane_ip = var.k3-ctrl_private_ip
+    db_secret_path   = var.db_secret_path
+    node_name        = var.Control_Plane_Node_Name
+    db_user          = data.aws_ssm_parameter.db_user.value
+    db_server        = aws_db_instance.k3_sql_db.address
+    db_name          = data.aws_ssm_parameter.db_name.value
+  })
   tags = {
     Name = "AZ1-PRIV1-K3S_C-Ubuntu"
   }
 }
 # Private Subnet Test Instance (K3s HA Node Plane)
 resource "aws_instance" "priv_k3s_node1_ubuntu" {
-  ami           = "ami-004364947f82c87a0"
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.jsrs-az2-priv1.id
-  private_ip    = var.k3-node_private_ip
-  key_name      = var.ssh_keypair_name
+  ami                  = "ami-004364947f82c87a0"
+  instance_type        = "t2.micro"
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  subnet_id            = aws_subnet.jsrs-az2-priv1.id
+  private_ip           = var.k3-node_private_ip
+  key_name             = var.ssh_keypair_name
   depends_on = [
     aws_instance.nat-gw_ubuntu,
     aws_db_instance.k3_sql_db,
@@ -100,20 +99,17 @@ resource "aws_instance" "priv_k3s_node1_ubuntu" {
   vpc_security_group_ids = [
     aws_security_group.sec_grp-private.id
   ]
-  user_data = <<-EOF
-                #!/bin/bash         
-                fallocate -l 1G /swapfile
-                chmod 600 /swapfile
-                mkswap /swapfile
-                swapon /swapfile
-                echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
-
-                export DEBIAN_FRONTEND=noninteractive
-                apt-get update -y
-                apt-get upgrade -y
-                
-                curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent --node-name=${var.Worker1_Node_Name}" K3S_URL="https://${var.k3-ctrl_private_ip}:6443" K3S_TOKEN="${var.CLUSTER_TOKEN}" sh -
-                EOF
+  user_data = templatefile("${path.module}/k3s.tpl", {
+    k3s_token_path   = var.k3s_token_path
+    aws_region       = var.aws_region
+    control_plane    = "false"
+    control_plane_ip = var.k3-ctrl_private_ip
+    db_secret_path   = var.db_secret_path
+    node_name        = var.Worker1_Node_Name
+    db_user          = data.aws_ssm_parameter.db_user.value
+    db_server        = aws_db_instance.k3_sql_db.address
+    db_name          = data.aws_ssm_parameter.db_name.value
+  })
   tags = {
     Name = "AZ2-PRIV1-K3S_N1-Ubuntu"
   }

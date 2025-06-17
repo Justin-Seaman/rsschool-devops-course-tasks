@@ -17,6 +17,14 @@ resource "aws_iam_role" "gh_actions_role" {
     }]
   })
 }
+resource "aws_iam_role_policy_attachment" "gha_role_policy_attachment" {
+  for_each   = toset(var.gha_iam_policy_arn)
+  role       = aws_iam_role.gh_actions_role.name
+  policy_arn = each.key
+}
+/*
+# Example of attaching policies to the GitHub Actions role individually
+# replaced with a loop above for better maintainability
 resource "aws_iam_role_policy_attachment" "ec2_full_access" {
   role       = aws_iam_role.gh_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
@@ -61,3 +69,4 @@ resource "aws_iam_role_policy_attachment" "rds_full_access" {
   role       = aws_iam_role.gh_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
 }
+*/
