@@ -91,3 +91,23 @@ echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
   
   aws dynamodb delete-item ` #Flags above (e.g. --tabl-name "jsrslock")
   ```
+
+## SECURE INSTALL STEPS:
+
+1. With the use of ephemeral/data aws_ssm_parameter, password_wo, password_wo_version, we can write and update the Master Password of the SQL server without storing the password in plaintext within the TF state or in our repo. SSM is the primary store of this information, and when it is changed in this location it is updated by the DB Resource block. Manual rollover of K3S nodes would still be required, but would just be easier to teardown and rebuild with new installs with new db-connection strings.
+2. Similarly, we leverage EC2 Instance Roles and SSM to call AWS CLI on the instance with read permissions to the parameters required for DB Password and K3S Token string. Howwever, Token String will change after initial database creation:
+e.g. from 
+`O30hVB9UoXxVf6C9Mq4hj5lecA7xH3dUalY` ->  `K10a38a68832314623e53cc5a09c45f017c0a8338df12fb7cb7095dc0dc94a01e58::server:O30hVB9UoXxVf6C9Mq4hj5lecA7xH3dUalY`
+where K10a38... is the "the token ID, a kind of public identifier used for internal reference"
+
+To simplify future rebuilds, just re-write the token secret to include the output of 
+`sudo cat /var/lib/rancher/k3s/server/node-token` on the control-plane node.
+
+This should be available once the cluster is fully initialized. Check your cluster with the following commands
+
+`sudo systemctl status k3s` -> General success of failure to run the K3s service
+
+`sudo k3s kubectl get nodes -o wide` -> Full view of cluster node status
+![k3-cluster-up](.visual_assets\k3s-cluster_up.png)
+
+With the updated token in place in SSM, you can now teardown and rebuild the ec2 instances without risk of losing data, because RDS will maintain the cluster storage in the external SQL DB. With proper SQL backup and recovery procedures, the K3s cluster can be recoverable on-demand while not over-spending on EC2 uptime! 💰

@@ -1,14 +1,15 @@
+ephemeral "aws_ssm_parameter" "db_secret" {
+  arn = "arn:aws:ssm:us-east-2:584296377309:parameter/jsrssecrets/rds/master_password"
+  with_decryption = true
+}
 data "aws_ssm_parameter" "db_secret" {
   name            = var.db_secret_path
-  with_decryption = true
 }
 data "aws_ssm_parameter" "db_user" {
   name            = var.db_user_path
-  with_decryption = true
 }
 data "aws_ssm_parameter" "db_name" {
   name            = var.db_name_path
-  with_decryption = true
 }
 resource "aws_db_instance" "k3_sql_db" {
   allocated_storage           = 10
@@ -19,7 +20,8 @@ resource "aws_db_instance" "k3_sql_db" {
   apply_immediately           = false
   instance_class              = "db.t3.micro"
   username                    = data.aws_ssm_parameter.db_user.value
-  password                    = data.aws_ssm_parameter.db_secret.value
+  password_wo                 = ephemeral.aws_ssm_parameter.db_secret.value
+  password_wo_version         = data.aws_ssm_parameter.db_secret.version 
   skip_final_snapshot         = true
   db_subnet_group_name        = aws_db_subnet_group.rds_subnet_group.name
   vpc_security_group_ids      = [aws_security_group.sec_grp-private.id]
@@ -32,4 +34,8 @@ resource "aws_db_subnet_group" "rds_subnet_group" {
   tags = {
     Name = "RDS Subnet Group allowing access to private subnets"
   }
+}
+output "db_password_version" {
+  value = aws_db_instance.k3_sql_db.password_wo_version
+  description = "The endpoint of the RDS instance"
 }
