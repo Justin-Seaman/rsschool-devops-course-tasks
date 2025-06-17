@@ -82,6 +82,9 @@ resource "aws_instance" "priv_k3s_ctrlplane_ubuntu" {
   tags = {
     Name = "AZ1-PRIV1-K3S_C-Ubuntu"
   }
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }
 # Private Subnet Test Instance (K3s HA Node Plane)
 resource "aws_instance" "priv_k3s_node1_ubuntu" {
@@ -112,6 +115,9 @@ resource "aws_instance" "priv_k3s_node1_ubuntu" {
   })
   tags = {
     Name = "AZ2-PRIV1-K3S_N1-Ubuntu"
+  }
+  lifecycle {
+    ignore_changes = [user_data]
   }
 }
 output "bastion_ip" {
