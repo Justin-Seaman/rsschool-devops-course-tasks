@@ -33,9 +33,104 @@ On push to main branch, GitHub Actions will run based on yml action file in .git
 + MFA required
 + Region = us-east-2
 
+## Kubernetes Cluster Deployment and Setup
+
+### General Design Choices
+
++ Using AWS RDS running Postgres database as External Database for K3s cluster. This gives us the following benefits over embedded database:
+  + Persistence of Cluster state with minimal DB management
+  + Easily set and monitor backup plans + potential for S3 db exports programticaly without much code.
+  + Resiliant to EC2 tear-downs required to remain in free tier (750 hours over 3 instances minimum gives us about 10 days of service runtime).
+    + RDS instance is free for 750 hours is a seperate budget than EC2 (RDS can run 24/7 in a month, while EC2 isntances will come up and down based on need)
+  + Able to control master_password state easily with Amazon Systems Manager Parameters (encrypted secrets) and Terraform ephemeral/Write-Only features
++ Use of "iam-ec2-role" assignment grants individual EC2 instances read-access to SSM parameters, so that secrets are not stored in repo, Terraform state, or in User-Data plaintext
+  + Instead, root user calls AWS CLI on startup to get parameters and secrets required for Cluster creation script
++ EC2 instances depend upon RDS, and Worker Nodes depend on control plane node in Terraform config, so cluster builds in proper order without risk of race-condition causing failures and manual intervention
+
+### Process
+
+1. Create an RDS instance with (see [rds.tf](rds.tf)):
+
+    + Ephemeral pull from SSM for DB master password (with [password_wo](https://developer.hashicorp.com/terraform/language/v1.11.x/resources/ephemeral#write-only-arguments) to prevent from storing in terraform state file)
+    + Currently hard-set to validated Postgres verison of 15.12
+    + Set subnet groups (az1/2-priv1) and security groups (private-sg)
+    + publicly accessible = false (only private IP assigned)
+
+2. Create the following EC2 instances (see [ec2.tf](ec2.tf)):
+
+      + NAT Gateway + Bastion Host:
+        + Configured to allow Private-out and SSH-in
+      + K3s Control Plane & K3s Worker(s):
+        + Relies on [k3s.tpl](k3s.tpl) and appropraite arguments for cluster building.
+          + k3s_token_path   = SSM path of the k3s token variable
+          + aws_region       = The AWS region of the ec2 instances
+          + control_plane    = Set to "true" if this instance will be control plane, otherwise set to "false".
+          + control_plane_ip = Private IP of the Cluster's control plane
+          + db_secret_path   = SSM path of the DB Secret
+          + node_name        = Some descriptive name for the node (seen in `kubectl get nodes`)
+          + db_user          = Username for the DB user of hte cluster
+          + db_server        = Private IP of the RDS database
+          + db_name          = Name of the Database for K3s on the RDS instance
+        + Many of these commands rely on the ability of ec2 to call aws instance (see [ec2.tf](ec2.tf))
+          + Needs SSM permissions granted through trust policy to call AWS CLI without passing a core secret.
+        + Running the following script on startup with "user-data" field
+
+        ```bash
+        #!/bin/bash
+        # Create swap disk to mitigate OOM killer
+        fallocate -l 1G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        swapon /swapfile
+        echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
+
+        # Install AWS CLI v2
+        apt-get update -y
+        apt-get install -y unzip curl
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        ./aws/install
+
+        # Upgrade packages on AMI
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -y
+        apt-get upgrade -y
+
+        # Get K3s Token from SSM
+        K3_TOKEN=$(aws ssm get-parameter --name "${k3s_token_path}" --with-decryption --region ${aws_region} --query "Parameter.Value" --output text)
+
+        # If you set "$control_plane" variable to true, then run ctrl-plane command for db connection, otherwise run worker node command to connect to give ctrl-plane
+        if [ "${control_plane}" = "true" ]; then
+          echo "Running control plane command..."
+          # Get DB password from SSM
+          DB_PASSWORD=$(aws ssm get-parameter --name "${db_secret_path}" --with-decryption --region ${aws_region} --query "Parameter.Value" --output text)
+          # Run k3s cluster build command with appropriate arguments
+          curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --token=$${K3_TOKEN} --node-name=${node_name} --datastore-endpoint='postgres://${db_user}:$${DB_PASSWORD}@${db_server}:5432/${db_name}'" sh -
+        else
+          echo "Running agent node command..."
+          # Run k3s worker install command with appropriate arguments
+          curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent --node-name=${node_name}" K3S_URL="https://${control_plane_ip}:6443" K3S_TOKEN="$${K3_TOKEN}" sh -
+        fi        
+        ```
+
+### Accessing the Cluster
+
+1. Copy the Private Key for SSH access to K3s nodes (`scp -i "<path to key>" <path to key> ubuntu@</home/ubuntu/.ssh>`)
+2. SSH into bastion host.
+3. SSH into `control plane node private ip` with the private key
+4. Run kubectl commands, prefixed with `sudo k3s`
+  + Can be run without `sudo k3s` if further configuration done, see [this article](https://0to1.nl/post/k3s-kubectl-permission/) 
+    + Copy the context to your ~/.kube/config and set this config as the default.
+        
+        ```bash
+        sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config && chown $USER ~/.kube/config && chmod 600 ~/.kube/config && export KUBECONFIG=~/.kube/config
+        ```
+    + You probably want to store that export to your bashrc or bash_profile. After you changed this you can use kubectl in a new terminal.
+
 ## Network Overview
 
 ### VPC CIDR Block
+
 + 10.0.0.0/16
 
 ### Subnet CIDR Block(s)
@@ -113,160 +208,79 @@ systemctl start nftables
 
 ## Process Log
 
-## Task 2: Basic Infrastructure Configuration
+## Task: K8s Cluster Configuration and Creation
 
-![task_2](.visual_assets/task_2.png)
+![task_3 schema](.visual_assets/task_3.png)
 
 ## Objective
 
-In this task, you will write Terraform code to configure the basic networking infrastructure required for a Kubernetes (K8s) cluster.
+In this task, you will configure and deploy a Kubernetes (K8s) cluster on AWS using or k3s. You will also verify the cluster by running a simple workload.
 
 ## Steps
 
-1. **Write Terraform Code**
+1. **Choose Deployment Method**
 
-   - Create Terraform code to configure the following:
-     - VPC
-     - 2 public subnets in different AZs
-     - 2 private subnets in different AZs
-     - Internet Gateway
-     - Routing configuration:
-       - Instances in all subnets can reach each other
-       - Instances in public subnets can reach addresses outside VPC and vice-versa
+   - Get familiar with [k3s](https://k3s.io/). ✅
+   - Use AWS EC2 instances from the [AWS Free Tier](https://aws.amazon.com/free/) to avoid additional expenses. ✅
 
-### Subnet configuration:
+2. **Create or Extend Terraform Code**
 
-|  Name:            |  CIDR:           |
-|  ---------------- |  --------------- |
-|  **az1_pub1**     |  10.0.1.0/24     |
-|  **az1_priv1**    |  10.0.2.0/24     |
-|  **az2_pub1**     |  10.0.3.0/24     |
-|  **az2_priv1**    |  10.0.4.0/24     |
+   - Create or extend Terraform code to manage AWS resources required for the cluster creation. ✅
+   - Ensure the code includes the creation of a bastion host. ✅
 
-2. **Organize Code**
+3. **Deploy the Cluster**
 
-   - Define variables in a separate variables file.
-   - Separate resources into different files for better organization.
+   - Deploy [Bastion host](https://www.geeksforgeeks.org/what-is-aws-bastion-host/) ✅
+   - Deploy the K8s cluster using k3s. ✅
+   - Ensure the cluster is accessible from your bastion host ✅
+   - **Additional task** make it accessible from your local computer. 
+      + ? Giving the private vpc a public IP? How would this be done in current config, listen on another port for ssh?
 
-3. **Verify Configuration**
+4. **Verify the Cluster**
 
-   - Execute `terraform plan` to ensure the configuration is correct.
-   - Provide a resource map screenshot (VPC -> Your VPCs -> your_VPC_name -> Resource map).
+   - Run the `kubectl get nodes` command from your bastion host to get information about the cluster. ✅
+   - Provide a screenshot of the `kubectl get nodes` command output. 
+    ![kubectl](.visual_assets/kubectl.png)
+5. **Deploy a Simple Workload**
 
-4. **Additional Tasks💫**
-   - Implement security groups.
-
-## Security Groups
-
-### Public Security Group
-
-#### Ingress
-
-![pub-in](.visual_assets\pub-in.png)
-
-#### Egress
-
-![pub-out](.visual_assets\pub-out.png)
-
-### Private Security Group
-
-#### Ingress
-
-![priv-in](.visual_assets\priv-in.png)
-
-#### Egress
-
-![priv-out](.visual_assets\priv-out.png)
-
-   - Create a bastion host for secure access to the private subnets.
-     + Re-using ec2 nat-gw for SSH access to private subnet. Private key required for ssh.
-   - Organize NAT for private subnets, so instances in the private subnet can connect with the outside world:
-     - Simpler way: create a NAT Gateway ❌
-     - Cheaper way: configure a NAT instance in the public subnet ✅
-   - Document the infrastructure setup and usage in a README file. ✅
+   - Deploy a simple workload on the cluster using the following command:
+     ```sh 
+     kubectl apply -f https://k8s.io/examples/pods/simple-pod.yaml
+     ```
+   - Ensure the workload runs successfully on the cluster.
+    ![simple_pod](.visual_assets/simple_pod.png)
+6. **Additional Tasks💫**
+   - Document the cluster setup process in a README file.
 
 ## Submission
 
-- Create `task_2` branch from `main` in your repository.
-- [Create a Pull Request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) (PR) with the Terraform code in your repository from `task_2` to `main`.
-- Provide screenshots of a resource map screenshot (VPC -> Your VPCs -> your_VPC_name -> Resource map) in the PR description.
-![resource_map](.visual_assets/resource_map.png)
-- (Optional) Set up a GitHub Actions (GHA) pipeline for the Terraform code.
+- Create a `task_3` branch from `main` in your repository. ✅
+- Provide a PR with the Terraform code for the K8s cluster and bastion host. ✅
+- Provide a screenshot of the `kubectl get all --all-namespaces` command output. (pod named "nginx" should be present)
+![k3s-namespace](.visual_assets/k3s-namespace.png)
+- Provide a screenshot of the `kubectl get nodes` command output. 2 nodes should be present.
+![kubectl](.visual_assets/kubectl.png)
+- Provide a README file documenting the cluster setup and deployment process.
 
 ## Evaluation Criteria (100 points for covering all criteria)
 
-1. **Terraform Code Implementation (50 points)**
+1. **Terraform Code for AWS Resources (10 points)**
 
-   - Terraform code is created to configure the following:
-     - VPC ✅
-     - 2 public subnets in different AZs ✅
-     - 2 private subnets in different AZs ✅
-     - Internet Gateway ✅
-     - Routing configuration: 
-       - Instances in all subnets can reach each other
-       - Instances in public subnets can reach addresses outside the VPC and vice-versa 
+   - Terraform code is created or extended to manage AWS resources required for the cluster creation.
+   - The code includes the creation of a bastion host.
 
-2. **Code Organization (10 points)**
+2. **Cluster Verification (50 points)**
 
-   - Variables are defined in a separate variables file.
-   - Resources are separated into different files for better organization.
+   - The cluster is verified by running the `kubectl get nodes` command from the bastion host.
+   - k8s cluster consists of 2 nodes (may be checked on screenshot).
 
-3. **Verification (10 points)**
+3. **Workload Deployment (30 points)**
 
-   - Terraform plan is executed successfully.
-   - A resource map screenshot is provided (VPC -> Your VPCs -> your_VPC_name -> Resource map).
+   - A simple workload is deployed on the cluster using `kubectl apply -f https://k8s.io/examples/pods/simple-pod.yaml`.
+   - Pod named "nginx" presented in the output of `kubectl get all --all-namespaces` command
 
-4. **Additional Tasks (30 points)💫**
-   - **Security Groups and Network ACLs (5 points)**
-     - Implement security groups and network ACLs for the VPC and subnets.
-   - **Bastion Host (5 points)**
-     - Create a bastion host for secure access to the private subnets.
-   - **NAT is implemented for private subnets (10 points)**
-     - Orginize NAT for private subnets in a simpler or cheaper way
-     - Instances in private subnets should be able to reach addresses outside the VPC
+4. **Additional Tasks (10 points)💫**
    - **Documentation (5 points)**
-     - Document the infrastructure setup and usage in a README file.
-   - **Submission (5 points)**
-   - A GitHub Actions (GHA) pipeline is set up for the Terraform code.
-
-## References
-
-#### Simpler way
-
-Elastic IP:
-
-- https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html
-
-Route table association:
-
-- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/main_route_table_association
-
-NAT vs Internet Gateway:
-
-- https://stackoverflow.com/questions/74455063/what-exactly-are-nat-gateway-and-internet-gateway-on-aws
-
-Configuration EC2 with private subnets:
-
-- https://medium.com/@prabhupj/terraform-way-to-run-aws-ec2-instances-in-a-private-subnet-and-load-balancing-with-an-application-98da5a11d4f1
-
-#### Cheaper way
-
-Making EC2 a NAT gateway:
-
-- https://medium.com/nerd-for-tech/how-to-turn-an-amazon-linux-2023-ec2-into-a-nat-instance-4568dad1778f
-
-Configuration of NAT with multiple interfaces:
-
-- It is needed to provide an interface by VPC and consume the interface by the Bastion host
-- https://people.computing.clemson.edu/~jmarty/courses/LinuxStuff/SetupNATWIthIpTables.pdf
-- https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_interface
-
-iptables:
-
-- https://linux.die.net/man/8/iptables
-
-Logs for troubleshooting user-data:
-
-- https://stackoverflow.com/questions/15904095/how-to-check-whether-my-user-data-passing-to-ec2-instance-is-working
-- /var/log/cloud-init.log
-- /var/log/cloud-init-output.log
+     - Document the cluster setup and deployment process in a README file.
+   - **Cluster accessability (5 points)**
+     - The cluster is verified by running the `kubectl get nodes` command from the **local computer**.
