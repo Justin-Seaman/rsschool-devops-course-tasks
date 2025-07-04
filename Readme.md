@@ -16,24 +16,91 @@ Best choise for saving - create 1 small instance in public network. Set up an in
 1. **Install Helm**
 
    - Follow the instructions to install [Helm](https://helm.sh/).
-   - Verify your Helm installation by deploying and removing the Nginx chart from [Bitnami](https://artifacthub.io/packages/helm/bitnami/nginx).
-
+      + Installed on Windows using winget `winget install Helm.Helm`
+      ![helm version](/.visual_assets/helm_version.png)
+   - Verify your Helm installation by deploying and removing the Nginx chart from [Bitnami](https://artifacthub.io/
+   packages/helm/bitnami/nginx).
+      ![nginx_check](/.visual_assets/nginx_check.png)
 2. **Prepare the Cluster**
 
    - Ensure your cluster has a solution for managing persistent volumes (PV) and persistent volume claims (PVC). Refer to the [K8s documentation](https://kubernetes.io/docs/concepts/storage/volumes/) and [k3s documentation](https://docs.k3s.io/storage) or [Minikube PVC](https://minikube.sigs.k8s.io/docs/handbook/persistent_volumes/)for more details.
+      + Create a directory on the minikube node to be used as PV (ssh into node, create directory, and grant ownership to service account)
+         ```plaintext
+         minikube ssh
+                                  _             _
+                     _         _ ( )           ( )
+           ___ ___  (_)  ___  (_)| |/')  _   _ | |_      __
+         /' _ ` _ `\| |/' _ `\| || , <  ( ) ( )| '_`\  /'__`\
+         | ( ) ( ) || || ( ) || || |\`\ | (_) || |_) )(  ___/
+         (_) (_) (_)(_)(_) (_)(_)(_) (_)`\___/'(_,__/'`\____)
+
+         $ mkdir /data/jenkins-volume
+         $ sudo chown -R 1000:1000 /data/jenkins-volume
+         ```
+      + Get the PV template from Jenkins with:
+
+      [`wget https://raw.githubusercontent.com/jenkins-infra/jenkins.io/master/content/doc/tutorials/kubernetes/installing-jenkins-on-kubernetes/jenkins-01-volume.yaml -O jenkins-01-volume.yaml`](https://raw.githubusercontent.com/jenkins-infra/jenkins.io/master/content/doc/tutorials/kubernetes/installing-jenkins-on-kubernetes/jenkins-01-volume.yaml)
+      
+      + Apply to the cluster with the command:
+
+      `kubectl apply -f jenkins-01-volume.yaml`
 
 3. **Install Jenkins**
 
    - Follow the instructions from the [Jenkins documentation](https://www.jenkins.io/doc/book/installing/kubernetes/#install-jenkins-with-helm-v3) to install Jenkins using Helm. Ensure Jenkins is installed in a separate namespace.
      [Debug init container](https://kubernetes.io/docs/tasks/debug/debug-application/debug-init-containers/#accessing-logs-from-init-containers)
+
+      + Setup the Service account
+      
+         + Get the YAML config template:
+
+      [`wget https://raw.githubusercontent.com/jenkins-infra/jenkins.io/master/content/doc/tutorials/kubernetes/installing-jenkins-on-kubernetes/jenkins-02-sa.yaml -O jenkins-02-sa.yaml`](https://raw.githubusercontent.com/jenkins-infra/jenkins.io/master/content/doc/tutorials/kubernetes/installing-jenkins-on-kubernetes/jenkins-02-sa.yaml)
+      
+      ```bash
+      # Create the namespace
+      kubectl create namespace jenkins
+      # Get the config template
+      wget https://raw.githubusercontent.com/jenkins-infra/jenkins.io/master/content/doc/tutorials/kubernetes/installing-jenkins-on-kubernetes/jenkins-02-sa.yaml -O jenkins-02-sa.yaml
+      # Apply to cluster
+      kubectl apply -f jenkins-02-sa.yaml
+      ```
+
    - Ensure that Jenkins is accessible via web browser. [Setup reverse proxy](https://www.digitalocean.com/community/tutorials/how-to-configure-nginx-as-a-reverse-proxy-on-ubuntu-22-04) if you are working in the environment behind the bastion host.
+
+      + Not using reverse proxy because setup in Minikube,
+         + Basic forwarding to localhost can be done with  `kubectl port-forward svc/jenkins 8080:8080 -n jenkins`
+         + Setting Jenkins to use the Node IP for web accessibility:
+            ```bash
+            $ kubectl edit svc jenkins -n jenkins
+            # Modify the config to use "type: NodePort" instead of "type: ClusterIP"
+            ... service/jenkins edited
+            # Check the port associated with the NodePort 
+            $ kubectl get svc -n jenkins
+            # In the example:
+            ##NAME            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+            ##jenkins         NodePort    10.111.75.211   <none>        8080:31024/TCP   9m1s
+            ##jenkins-agent   ClusterIP   10.108.45.89    <none>        50000/TCP        9m1s
+            # "jenkins" is the webservice, and 31024 is the Port for access
+            # Get the IP of the node with the command:
+            $ minikube ip
+            ... 172.23.37.32
+            # Based on the above, the Jenkins webserver is accessible at http://172.23.37.32:31024/login
+            ```
+        ![jenkins-http](/.visual_assets/jenkins-http.png)
+ 
+
 
 4. **Verify Jenkins Installation**
 
    - Create a simple freestyle project in Jenkins that writes "Hello world" into the log.
+ ![hello-world_proj](/.visual_assets/hello-world_proj.png)
+ ![hello-world_exe](/.visual_assets/hello-world_exe.png)
+
+
 
 5. **Additional Tasks💫**
    - Set up a GitHub Actions (GHA) pipeline to deploy Jenkins. (not applicable on minikube installation)
+      + Not relevant for this task
    - Configure authentication and security settings for Jenkins.
    - Use JCasC to store your Hello World job.
 
