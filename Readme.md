@@ -102,7 +102,40 @@ Best choise for saving - create 1 small instance in public network. Set up an in
    - Set up a GitHub Actions (GHA) pipeline to deploy Jenkins. (not applicable on minikube installation)
       + Not relevant for this task
    - Configure authentication and security settings for Jenkins.
+      + Using [GitHub Authentication Plugin](https://plugins.jenkins.io/github-oauth/) instead of built-in Username/Password
+         + This plugin requires the following plugins and plugin dependencies be installed (jenkins.controller.installPlugins):
+            - github-oauth  # GitHub Authentication plugin
+            - github-api
+            - jjwt-api
+            - json-path-api
+            - token-macro
+            - github
+            - github-branch-source
+            - jquery3-api
+            - echarts-api
+            - checks-api
+            - junit
+            - matrix-project
+            - plain-credentials
+            - matrix-auth
+         + In [jenkins-values.yaml](jenkins-values.yaml), find the Controller.JCasC.configScripts section and review the script named "security". 
+         + This will use the environment variables in the K8s cluster (made accessible in Controller.containerEnv and Controller.initContainerEnvFrom) to pass the OAuth Id and Secret of the Created GitHub OAuth app. Use the [gh_auth_secrets.sh](gh_auth_secrets.sh) script to pass environment variables the K8s Cluster.
+         ![.visual_assets\GH_SSO.png](.visual_assets\GH_SSO.png)
+         + We can then restrict access based on associated repo access in GH
    - Use JCasC to store your Hello World job.
+      + Defining Job using [Job DSL](https://plugins.jenkins.io/job-dsl/) plugin.
+      + jenkins.controller.JSCasC.configScripts.job-dsl:
+        ```yaml
+        jobs:
+          - script: |
+              job('hello-world') {
+                description('A simple job created via Job DSL that prints Hello world.')
+                steps {
+                  shell('echo Hello world')
+                }
+              }
+        ```
+      + 
 
 ## Submission
 

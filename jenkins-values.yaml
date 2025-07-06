@@ -139,7 +139,9 @@ controller:
   #     cpu: "2000m"
   #     memory: "4096Mi"
   # -- Environment variable sources for Init Container
-  initContainerEnvFrom: []
+  initContainerEnvFrom: 
+    - secretRef:
+        name: github-oauth-secret
 
   # useful for i.e., http_proxy
   # -- Environment variables for Init Container
@@ -152,7 +154,17 @@ controller:
   containerEnvFrom: []
 
   # -- Environment variables for Jenkins Container
-  containerEnv: []
+  containerEnv:
+    - name: GITHUB_OAUTH_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: github-oauth-secret
+          key: client-id
+    - name: GITHUB_OAUTH_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: github-oauth-secret
+          key: client-secret
   #   - name: http_proxy
   #     value: "http://192.168.64.1:3128"
 
@@ -410,6 +422,22 @@ controller:
     - git:5.7.0
     - configuration-as-code:1971.vf9280461ea_89
     - job-dsl:1.93
+    # Adds the GitHub Authentication plugin
+    - github-api
+    - jjwt-api
+    - json-path-api
+    - token-macro
+    - github
+    - github-branch-source
+    - jquery3-api
+    - echarts-api
+    - checks-api
+    - junit
+    - matrix-project
+    - github-oauth  # GitHub Authentication plugin
+    - plain-credentials
+    - matrix-auth
+
 
   # If set to false, Jenkins will download the minimum required version of all dependencies.
   # -- Download the minimum required version or latest version of all dependencies
@@ -452,7 +480,7 @@ controller:
   #  - "new groovy.json.JsonSlurperClassic"
 
   # -- Map of groovy init scripts to be executed during Jenkins controller start
-  initScripts: {}
+  initScripts: 
   #  test: |-
   #    print 'adding global pipeline libraries, register properties, bootstrap jobs...'
   # -- Name of the existing ConfigMap that contains init scripts
@@ -506,22 +534,46 @@ controller:
   # /var/jenkins_home/casc_configs (by default) and will be processed by the Configuration as Code Plugin. The lines after each |
   # become the content of the configuration yaml file. The first line after this is a JCasC root element, e.g., jenkins, credentials,
   # etc. Best reference is https://<jenkins_url>/configuration-as-code/reference. The example below creates a welcome message:
+
+  ###BEGIN JCasC SECTION
+  ###
+  ###
   JCasC:
     # -- Enables default Jenkins configuration via configuration as code plugin
-    defaultConfig: true
+    defaultConfig: false
 
     # If true, the init container deletes all the plugin config files and Jenkins Config as Code overwrites any existing configuration
     # -- Whether Jenkins Config as Code should overwrite any existing configuration
-    overwriteConfiguration: false
+    overwriteConfiguration: true
     # -- Remote URLs for configuration files.
     configUrls: []
     # - https://acme.org/jenkins.yaml
     # -- List of Jenkins Config as Code scripts
-    configScripts: {}
-    #  welcome-message: |
-    #    jenkins:
-    #      systemMessage: Welcome to our CI\CD server. This Jenkins is configured and managed 'as code'.
-
+    configScripts:
+      security: |-
+        jenkins:
+          securityRealm:
+            github:
+              clientID: "${GITHUB_OAUTH_CLIENT_ID}"
+              clientSecret: "${GITHUB_OAUTH_CLIENT_SECRET}"
+              githubWebUri: "https://github.com"
+              githubApiUri: "https://api.github.com"
+              oauthScopes: "read:org,user:email"
+          authorizationStrategy:
+            loggedInUsersCanDoAnything:
+              allowAnonymousRead: false
+      welcome-message: |-
+        jenkins:
+          systemMessage: Welcome to our CI\CD server. This Jenkins is configured and managed 'as code'.
+      job-dsl: |
+        jobs:
+          - script: |
+              job('hello-world') {
+                description('A simple job created via Job DSL that prints Hello world.')
+                steps {
+                  shell('echo Hello world')
+                }
+              }
     # Allows adding to the top-level security JCasC section. For legacy purposes, by default, the chart includes apiToken configurations
     # -- Jenkins Config as Code security-section
     security:
@@ -532,24 +584,33 @@ controller:
 
     # Ignored if securityRealm is defined in controller.JCasC.configScripts
     # -- Jenkins Config as Code Security Realm-section
-    securityRealm: |-
-      local:
-        allowsSignup: false
-        enableCaptcha: false
-        users:
-        - id: "${chart-admin-username}"
-          name: "Jenkins Admin"
-          password: "${chart-admin-password}"
+    securityRealm: ""
+      #github:
+      #  clientID: "${GITHUB_OAUTH_CLIENT_ID}"
+      #  clientSecret: "${GITHUB_OAUTH_CLIENT_SECRET}"
+      #  githubWebUri: "https://github.com"
+      #  githubApiUri: "https://api.github.com"
+      #  oauthScopes: "read:org,user:email,repo"
+    #  local:
+    #    allowsSignup: false
+    #    enableCaptcha: false
+    #    users:
+    #    - id: "${chart-admin-username}"
+    #      name: "Jenkins Admin"
+    #      password: "${chart-admin-password}"
 
     # Ignored if authorizationStrategy is defined in controller.JCasC.configScripts
     # -- Jenkins Config as Code Authorization Strategy-section
-    authorizationStrategy: |-
-      loggedInUsersCanDoAnything:
-        allowAnonymousRead: false
+    #authorizationStrategy: |-
+    #  loggedInUsersCanDoAnything:
+   #     allowAnonymousRead: false
 
     # -- Annotations for the JCasC ConfigMap
     configMapAnnotations: {}
 
+  ###END JCasC SECTION
+  ###
+  ###
   # -- Custom init-container specification in raw-yaml format
   customInitContainers: []
   # - name: custom-init
@@ -614,7 +675,17 @@ controller:
       # -- Environment variable sources for the Jenkins Config as Code auto-reload container
       envFrom: []
       # -- Environment variables for the Jenkins Config as Code auto-reload container
-      env: []
+      env: 
+        - name: GITHUB_OAUTH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: github-oauth-secret
+              key: client-id
+        - name: GITHUB_OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: github-oauth-secret
+              key: client-secret
       #   - name: REQ_TIMEOUT
       #     value: "30"
 
@@ -1255,7 +1326,7 @@ persistence:
   # Requires persistence.enabled: true
   # If defined, PVC must be created manually before volume will be bound
   # -- Provide the name of a PVC
-  existingClaim:
+  existingClaim: ""
 
   # jenkins data Persistent Volume Storage Class
   # If defined, storageClassName: <storageClass>
@@ -1263,7 +1334,7 @@ persistence:
   # If undefined (the default) or set to null, no storageClassName spec is
   #   set, choosing the default provisioner (gp2 on AWS, standard on GKE, AWS & OpenStack)
   # -- Storage class for the PVC
-  storageClass: jenkins-pv
+  storageClass: "jenkins-pv"
   # -- Annotations for the PVC
   annotations: {}
   # -- Labels for the PVC
