@@ -12,6 +12,8 @@ RUN pip install -r requirements.txt
 
 # Set environment varialbe
 ENV FLASK_APP=main.py
+ENV FLASK_HOST=${FLASK_HOST}
+ENV FLASK_PORT=${FLASK_PORT}
 
 # Execute flask startup command
-CMD ["flask","run","--host=${FLASK_HOST}","--port=${FLASK_PORT}"]
+CMD flask run --host=${FLASK_HOST} --port=${FLASK_PORT}
