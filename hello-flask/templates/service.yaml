@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "hello-flask.fullname" . }}
-  labels:
-    {{- include "hello-flask.labels" . | nindent 4 }}
+  name: {{ .Release.Name }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ .Values.containerPort }}
+      {{- if eq .Values.service.type "NodePort"}}
+      nodePort: {{ .Values.service.nodePort}}
+      {{- end}}
       protocol: TCP
-      name: http
   selector:
-    {{- include "hello-flask.selectorLabels" . | nindent 4 }}
+    app: flask

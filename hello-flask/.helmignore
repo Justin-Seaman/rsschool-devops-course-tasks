@@ -21,3 +21,10 @@
 .idea/
 *.tmproj
 .vscode/
+#Repo specific
+.github/
+flask_app/
+*.ps1
+*.tar
+*.tf
+*.md
