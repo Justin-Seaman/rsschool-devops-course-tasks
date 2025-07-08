@@ -12,8 +12,8 @@
     1. Pull Python3.9 from docker hub ([link](https://hub.docker.com/_/python))
     2. Copy the [flask_app](flask_app) directory to container
     3. Run pip install on [requirments.txt](flask_app\requirements.txt)
-    4. Set environment variables for entrypoint script (run flask service on 0.0.0.0/8080)
-    5. Launch flaks service with execution of entrypoint script
+    4. Set environment variables for entrypoint script (run flask service on 0.0.0.0:8080)
+    5. Launch flask service with execution of entrypoint script
 + [build-and-run.ps1](build-and-run.ps1) for local testing
 + [docker_publish.ps1](docker_publish.ps1) for local publishing to Docker Hub
 + [Docker Publish GitHub Action](.github\workflows\docker_publish.yml) to push latest and sha1 hash of Pushes to Branch = Task_5
