@@ -1,0 +1,1 @@
+flask run --host="$FLASK_HOST" --port="$FLASK_PORT"

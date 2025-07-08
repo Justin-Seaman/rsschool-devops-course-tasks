@@ -16,4 +16,4 @@ ENV FLASK_HOST=${FLASK_HOST}
 ENV FLASK_PORT=${FLASK_PORT}
 
 # Execute flask startup command
-CMD flask run --host=$FLASK_HOST --port=$FLASK_PORT
+ENTRYPOINT [ "./entrypoint.sh" ]
