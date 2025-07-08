@@ -1,6 +1,4 @@
 ARG PYTHON_VERSION=3.9
-ARG FLASK_HOST=0.0.0.0
-ARG FLASK_PORT=8080
 FROM python:${PYTHON_VERSION}
 WORKDIR /flask_app
 
@@ -12,8 +10,10 @@ RUN pip install -r requirements.txt
 
 # Set environment varialbe
 ENV FLASK_APP=main.py
-ENV FLASK_HOST=${FLASK_HOST}
-ENV FLASK_PORT=${FLASK_PORT}
+ENV FLASK_HOST=0.0.0.0
+ENV FLASK_PORT=8080
 
+# Make entrypoint executable
+RUN chmod +x ./entrypoint.sh
 # Execute flask startup command
 ENTRYPOINT [ "./entrypoint.sh" ]
