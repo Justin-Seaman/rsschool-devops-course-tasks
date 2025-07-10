@@ -10,7 +10,7 @@
 
 + The Dockerfile stored in the flask app directory directs Docker how to build the container including
     1. Pull Python3.9 from docker hub ([link](https://hub.docker.com/_/python))
-    2. Copy the [flask_app](flask_app) directory to container
+    2. Copy the [flask_app](flask_app/) directory to container
     3. Run pip install on [requirments.txt](flask_app\requirements.txt)
     4. Set environment variables for entrypoint script (run flask service on 0.0.0.0:8080)
     5. Launch flask service with execution of entrypoint script
@@ -24,12 +24,12 @@
 
 + Run `helm create hello-flask` to create framework+ boilerplate
 + Configure the following core files:
-    + [Chart.yml](Chart.yml) -> Application metadata like name/version
-    + [Values.yml](Values.yml) -> Variables which can be used across helm repo by reference. Can be overwritten easily with -f
-    + [/templates/deployment.yml](/templates/deployment.yml) -> Set core containerd values like image name:tag, replica count, label selector, etc.
-    + [/templates/service.yml](/templates/service.yml) -> Set networking services between container and cluster
-    + [/templates/NOTES.txt](/templates/NOTES.txt) -> Output on install for user guidance
-    + [/templates/configmap.yaml](/templates/configmap.yaml) -> Creation of data fields and env variables for passing to container
+    + [Chart.yml](hello-flask/Chart.yaml) -> Application metadata like name/version
+    + [Values.yml](hello-flask/Values.yml) -> Variables which can be used across helm repo by reference. Can be overwritten easily with -f
+    + [/templates/deployment.yaml](hello-flask/templates/deployment.yaml) -> Set core containerd values like image name:tag, replica count, label selector, etc.
+    + [/templates/service.yaml](hello-flask//templates/service.yaml) -> Set networking services between container and cluster
+    + [/templates/NOTES.txt](hello-flask//templates/NOTES.txt) -> Output on install for user guidance
+    + [/templates/configmap.yaml](hello-flask/templates/configmap.yaml) -> Creation of data fields and env variables for passing to container
 
 ### Network Access
 
@@ -47,7 +47,7 @@ In this task, you will create a Docker image and Helm chart for a simple applica
    - Create a Helm chart for your [Application](https://github.com/rolling-scopes-school/tasks/tree/master/devops/flask_app/README.md).
      
    
-     + Docker Container Build and deploy: [Dockerfile](./flask_app/Dockerfile)
+     + Docker Container Build and deploy: [Dockerfile](flask_app/Dockerfile)
      + Docker Container Artifact [Link](https://github.com/Justin-Seaman/rsschool-devops-course-tasks/actions/runs/16136139585/artifacts/3483377041)
      + Helm chart [directory](./hello-flask/)
 
@@ -56,13 +56,13 @@ In this task, you will create a Docker image and Helm chart for a simple applica
 
    - Deploy the application using the Helm chart.
    
-        ![helm-deploy](.visual_assets\helm-deploy.png)
+        ![helm-deploy](.visual_assets/helm-deploy.png)
    
    - Ensure the application is accessible from the web browser.
 
-        ![node-ip](.visual_assets\node-ip.png)
+        ![node-ip](.visual_assets/node-ip.png)
 
-        ![hello-flask](.visual_assets\hello-flask.png)
+        ![hello-flask](.visual_assets/hello-flask.png)
 
 3. **Store Artifacts in Git**
 
