@@ -1,0 +1,12 @@
+image:
+  name: justinmseaman/hello-flask
+  tag: latest
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30000
+
+containerPort: 8080
+
+replicaCount: 3

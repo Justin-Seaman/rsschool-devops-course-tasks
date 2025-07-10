@@ -1,0 +1,41 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ task_5 ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v4
+
+    - name: Run build command
+      run: docker build -t hello-flask ./flask_app
+
+    - name: Create tag(s)
+      run: |
+        docker tag hello-flask ${{ secrets.DOCKERHUB_USERNAME }}/hello-flask:${{ github.sha }}
+        docker tag hello-flask ${{ secrets.DOCKERHUB_USERNAME }}/hello-flask:latest
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: Deploy to Docker Hub
+      run: |
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-flask:${{ github.sha }}
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/hello-flask:latest
+
+    - name: Save Docker image as archive
+      run: docker save -o hello-flask.tar ${{ secrets.DOCKERHUB_USERNAME }}/hello-flask:latest
+    
+    - name: Upload image archive as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: hello-flask-image
+        path: hello-flask.tar
