@@ -576,8 +576,64 @@ controller:
                   shell('echo Hello world')
                 }
               }
+      kubernetes-cloud.yaml: |-
+        jenkins:
+          clouds:
+            - kubernetes:
+                name: "kubernetes"
+                serverUrl: "https://kubernetes.default"
+                skipTlsVerify: true
+                namespace: "jenkins"
+                jenkinsUrl: "http://jenkins.jenkins.svc.cluster.local:8080"
+                jenkinsTunnel: "jenkins-agent.jenkins.svc.cluster.local:50000"
+                containerCap: 10
+                templates:
+                  - name: "default"
+                    label: "jenkins-agent"
+                    containers:
+                      - name: "jnlp"
+                        image: "jenkins/inbound-agent:latest"
+                        args: "${computer.jnlpmac} ${computer.name}"
+                        ttyEnabled: true
+      #Creates a SonarCloud Tool using the Global Credential from `sonar-token-id`
+      sonar-cloud-config.yaml: |-
+        unclassified:
+          sonarGlobalConfiguration:
+            buildWrapperEnabled: false
+            installations:
+              - name: "SONARQUBE_ENV"
+                serverUrl: "https://sonarcloud.io"
+                credentialsId: "sonar-token-id"
+                triggers:
+                  skipScmCause: false
+                  skipUpstreamCause: false
+      amazon-ses-config.yaml: |-
+        unclassified:
+          email-ext:
+            adminRequiredForTemplateTesting: false
+            allowUnregisteredEnabled: false
+            charset: "UTF-8"
+            debugMode: false
+            defaultBody: |-
+              $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+
+              Check console output at $BUILD_URL to view the results.
+            defaultContentType: "text/plain"
+            defaultSubject: "$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!"
+            defaultTriggerIds:
+            - "hudson.plugins.emailext.plugins.trigger.FailureTrigger"
+            mailAccount:
+              credentialsId: "jenkins_ses"
+              smtpHost: "email-smtp.us-east-2.amazonaws.com"
+              smtpPort: "587"
+              useTls: true
+            maxAttachmentSize: -1
+            maxAttachmentSizeMb: -1
+            precedenceBulk: false
+            throttlingEnabled: false
+            watchingEnabled: false   
     # Allows adding to the top-level security JCasC section. For legacy purposes, by default, the chart includes apiToken configurations
-    # -- Jenkins Config as Code security-section
+    # -- Jenkins Config as Code security-sectionS
     security:
       apiToken:
         creationOfLegacyTokenEnabled: false
