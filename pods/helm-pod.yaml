@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins: helm
+spec:
+  containers:
+    - name: helm
+      image: alpine/helm:3.14.0
+      command:
+        - cat
+      tty: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+  restartPolicy: Never
+  volumes:
+    - name: workspace-volume
+      emptyDir: {}
