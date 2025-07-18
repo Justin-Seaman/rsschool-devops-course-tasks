@@ -41,7 +41,7 @@ pipeline {
       steps {
         container('sonar-scanner'){
           withSonarQubeEnv('SONARQUBE_ENV') {
-            sh 'sonar-scanner -X -Dsonar.projectKey=task_6 -Dsonar.organization=justinseaman -Dsonar.sources=flask_app -Dsonar.login=$SONAR_TOKEN'
+            sh 'sonar-scanner -Dsonar.projectKey=task_6 -Dsonar.organization=justinseaman -Dsonar.sources=flask_app -Dsonar.login=$SONAR_TOKEN'
           }
         }
       }
@@ -77,17 +77,31 @@ pipeline {
       }
     }
     stage('5. Deploy to K8s with Helm') {
+      agent{
+        kubernetes {
+          yamlFile 'pods/helm-pod.yaml'
+        }
+      }
       steps {
-        sh """
-          helm upgrade --install hello-flask ./hello-flask \
-            --set image.repository=${REGISTRY} \
-            --set image.tag=${IMAGE_SHA_TAG}
-        """
+        container('helm') {
+            sh """
+              helm upgrade --install hello-flask ./hello-flask \
+              --set image.repository=${REGISTRY} \
+              --set image.tag=${IMAGE_SHA_TAG}
+            """
+        }
       }
     }
     stage('6. Smoke Test') {
+      agent {
+        kubernetes {
+          label 'default'
+        }
+      }
       steps {
-        sh 'curl -f http://hello-flask.justinseaman.com/'
+        container('jnlp'){
+            sh 'curl -f http://hello-flask.justinseaman.com/'
+        }
       }
     }
   }
