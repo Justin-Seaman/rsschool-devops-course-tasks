@@ -91,7 +91,6 @@ pipeline {
       }
     }
   }
-  }
   post {
     success {
       emailext(
