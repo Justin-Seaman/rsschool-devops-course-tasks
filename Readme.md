@@ -1,12 +1,24 @@
 # Task 6: Application Deployment via Jenkins Pipeline
 
-![task_6 schema](../../visual_assets/task_4-6.png)
+![task_6 schema](.visual_assets/task_4-6.png)
 
 ## Basic Infrastructure Configuration
 
-For this task, I am re-using my Jenkins Helm chart from Task 4 Branch. I am running on a minikube node for local dev.
+For this task, I am re-using my Application Dockerfile and Helm chart from Task 4 Branch. `flask_app` is the core app directory from [source repo](https://github.com/rolling-scopes-school/tasks/tree/master/devops/flask_app) and `hello-flask` is the helm chart for this app.
 
+I also included the Jenkins configuration used to run this deployment in a .jenkins file. Longterm plan is to add the Pipeline intialization to the JCasC config along with the HelloWorld.
+
+*I may attempt to add a helm chart to deploy the (Cloudlfard Helm Chart)[https://github.com/cloudflare/helm-charts] so I no longer need to depend on NodeIp and can handle Ingress with this proxy. To do this I would probably just capture the full helm chart for jenkins and add cloudflared to the /charts directory.*
+
+```plaintext
+├───.jenkins
+├───flask_app   
+└───hello-flask
+    └───templates
+```
 ### Creating a running Jenkins K8s service locally:
+I am running on a minikube node for local dev.
+
 1. Going to my [OAuth application for GitHub SSO](https://github.com/settings/applications/3070619) in my Jenkins app setting the `callback url` to the result of `minikube ip` (I later changed this to my public Cloudflare endpoint FQDN).
 2. Taking Note of the Client-Id and re-creating a Client-Secret
 3. Runnnig the following on my K8s Cluster to create the jenknins namespace and assign secret values to it:
@@ -58,9 +70,7 @@ Confirm access by navigating to the Application's URL.
 ![.visual_assets/pub_jenkins.png](.visual_assets/pub_jenkins.png)
 You can restrict the policies and define more granular WAF policies as needed (e.g. only bypass on /webhooks and /securityRealm/finishLogin while forcing ZeroTrust auth on other paths)
 
-*I may attempt to add a helm chart to deploy the (Cloudlfard Helm Chart)[https://github.com/cloudflare/helm-charts] so I no longer need to depend on NodeIp and can handle Ingress with this proxy.*
-
-### Pipeline Creation in Jenkins
+### Pipeline Initialization in Jenkins
 The Objective of Jenkins Pipeline Configuration is to:
 1. Use a Jenkinsfile stored in the git repository to handle Pipeline logic (much like GitHub Actions artifacts are directly associated with repo).
 2. Establish Webhook communication from GitHub to Jenkins on key repo events.
@@ -116,6 +126,22 @@ retry(3) {
 ```
 5. Check your pipeline on Push for the output of the test Jenkinsfile (should see checkout and run of Jenkinsfile, along with Hello World #0-9).
 ![.visual_assets/test-pipeline.png](.visual_assets/test-pipeline.png)
+
+### Turning the Jenkinsfile into a CI/CD pipeline
+
+Requirements for the following steps in the pipeline:
+1. Application build
+   + I already handled a
+2. Unit test execution
+   + Use [pytest](https://docs.pytest.org/en/stable/) to assert a response of 200 at the root of the flask app. 
+3. Security check with SonarQube
+   + Static code analysis with Sonar will use the [Jenkins Plugin](https://github.com/jenkinsci/sonarqube-plugin) and a [Sonar Cloud](https://sonarcloud.io/) free account.
+4. Docker image building and pushing to any Registry
+   + Already handled in my GHA plan from task_5. Will refactor for Groovy/Jenkinsfile.
+5. Deployment to the K8s cluster with Helm (dependent on the previous step)
+   + Once Docker image built and published, a Helm build with the same tag should pull it down for CD
+6. (Optional) Application verification (e.g., curl the main page, send requests to API, smoke test)
+   + Quick smoke test to the private IP of the application. 
 
 
 ## Objective
