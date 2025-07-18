@@ -5,7 +5,7 @@ pipeline {
 
   }
   stages {
-    stage('1. Application Build') {
+    stage('1 & 2. Application Build and Unit Tests') {
       agent{
         kubernetes {
           yamlFile 'pods/python-pod.yaml' 
@@ -22,28 +22,10 @@ pipeline {
             pip install -r requirements.txt
             pip install -r requirements-dev.txt
             ls -la
-          '''
-        }
-      } 
-    }
-    stage('2. Unit Tests') {
-      agent{
-        kubernetes {
-          yamlFile 'pods/python-pod.yaml' 
-        }
-      }
-      steps {
-        echo 'Running unit tests...'
-
-        container('python'){
-          sh '''
-            python --version
-            cd flask_app
-            pwd
             pytest tests/test_app.py --maxfail=1 --disable-warnings --tb=short
           '''
         }
-      }
+      } 
     }
     stage('3. SonarQube Scan') {
       agent{
