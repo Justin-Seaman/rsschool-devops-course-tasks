@@ -35,20 +35,20 @@ pipeline {
       }
       post {
         success {
-          echo "✅ Docker image pushed: ${env.IMAGE_SHA_TAG}"
-          emailext(
-            subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: "The build succeeded!\nImage: ${env.IMAGE_SHA_TAG}",
-            to: 'justin_seaman@outlook.com'
-          )
+            emailext(
+                from: "justin_seaman@outlook.com",
+                subject: "✅Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "The Jenkins job ${env.JOB_NAME} build #${env.BUILD_NUMBER} completed successfully.\n\nImage: ${env.IMAGE_SHA_TAG}\n\nSee details: ${env.BUILD_URL}",
+                to: "justin_seaman@outlook.com, jmseaman0f@gmail.com"
+            )
         }
         failure {
-          echo "❌ Build failed"
-          emailext(
-            subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: "The build failed. Check console output:\n${env.BUILD_URL}",
-            to: 'you@example.com'
-          )
+            emailext(
+                from: "justin_seaman@outlook.com",
+                subject: "❌Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "The Jenkins job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has failed.\n\nSee details: ${env.BUILD_URL}",
+                to: "justin_seaman@outlook.com, jmseaman0f@gmail.com"
+            )
         }
       }
     }
