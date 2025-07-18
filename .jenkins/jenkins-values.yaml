@@ -438,6 +438,7 @@ controller:
     - plain-credentials
     - matrix-auth
     - sonar:2.18 # Sonarqube static code analysis
+    - email-ext:1916.vc954a_f86ff21 # Email Alerting
 
 
   # If set to false, Jenkins will download the minimum required version of all dependencies.

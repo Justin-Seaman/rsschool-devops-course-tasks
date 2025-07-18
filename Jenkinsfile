@@ -2,7 +2,7 @@ pipeline {
   agent none
   
   stages {
-    stage('Build and Push with Kaniko') {
+    stage('STEP 4: Docker image building and pushing to any Registry') {
       agent{
         kubernetes {
           yamlFile 'kaniko-pod.yaml' // This file defines the kaniko container
@@ -36,9 +36,19 @@ pipeline {
       post {
         success {
           echo "✅ Docker image pushed: ${env.IMAGE_SHA_TAG}"
+          emailext(
+            subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: "The build succeeded!\nImage: ${env.IMAGE_SHA_TAG}",
+            to: 'justin_seaman@outlook.com'
+          )
         }
         failure {
           echo "❌ Build failed"
+          emailext(
+            subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: "The build failed. Check console output:\n${env.BUILD_URL}",
+            to: 'you@example.com'
+          )
         }
       }
     }
