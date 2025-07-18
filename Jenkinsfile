@@ -18,6 +18,7 @@ pipeline {
           sh '''
             python --version
             cd flask_app
+            export PYTHONPATH=$(pwd):$PYTHONPATH
             pwd
             pip install -r requirements.txt
             pip install -r requirements-dev.txt
