@@ -21,8 +21,9 @@ pipeline {
             pwd
             pip install -r requirements.txt
             pip install -r requirements-dev.txt
-            ls -la
-            pytest tests/test_app.py --maxfail=1 --disable-warnings --tb=short
+            cd ..
+            ls -la ./flask_app/tests
+            pytest flask_app/tests/test_app.py --maxfail=1 --disable-warnings --tb=short
           '''
         }
       } 
