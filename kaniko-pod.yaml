@@ -18,7 +18,7 @@ spec:
   volumes:
     - name: docker-config
       secret:
-        secretName: regcred
+        secretName: regcred # Created in .jenkins/dockerhub_secrets.sh
         items:
           - key: .dockerconfigjson
             path: config.json
