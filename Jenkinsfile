@@ -39,8 +39,10 @@ pipeline {
         SONAR_TOKEN = credentials('sonar-token-id')
       }
       steps {
-        withSonarQubeEnv("${SONARQUBE_ENV}") {
-          sh 'sonar-scanner -Dsonar.projectKey=task_6 -Dsonar.sources=flask_app -Dsonar.login=$SONAR_TOKEN'
+        container('sonar-scanner'){
+          withSonarQubeEnv("${SONARQUBE_ENV}") {
+            sh 'sonar-scanner -Dsonar.projectKey=task_6 -Dsonar.sources=flask_app -Dsonar.login=$SONAR_TOKEN'
+          }
         }
       }
     }
