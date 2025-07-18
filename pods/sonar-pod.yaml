@@ -6,7 +6,13 @@ metadata:
 spec:
   containers:
     - name: sonar-scanner
-      image: sonarsource/sonar-scanner-cli:5.0.1
+      image: sonarsource/sonar-scanner-cli:latest
       command:
         - cat
       tty: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+  volumes:
+    - name: workspace-volume
+      emptyDir: {}
