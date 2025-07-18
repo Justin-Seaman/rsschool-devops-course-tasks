@@ -86,8 +86,6 @@ pipeline {
         container('helm') {
             sh """
               helm upgrade --install hello-flask ./hello-flask \
-              --set image.repository=${REGISTRY} \
-              --set image.tag=${IMAGE_SHA_TAG}
             """
         }
       }
