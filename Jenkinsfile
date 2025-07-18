@@ -40,8 +40,8 @@ pipeline {
       }
       steps {
         container('sonar-scanner'){
-          withSonarQubeEnv("${SONARQUBE_ENV}") {
-            sh 'sonar-scanner -Dsonar.projectKey=task_6 -Dsonar.sources=flask_app -Dsonar.login=$SONAR_TOKEN'
+          withSonarQubeEnv('SONARQUBE_ENV') {
+            sh 'sonar-scanner -X -Dsonar.projectKey=task_6 -Dsonar.sources=flask_app -Dsonar.login=$SONAR_TOKEN'
           }
         }
       }
