@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
     - name: sonar-scanner
-      image: sonarsource/sonar-scanner-cli:latest
+      image: sonarsource/sonar-scanner-cli:5.0.1
       command:
         - cat
       tty: true
