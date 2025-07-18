@@ -76,31 +76,28 @@ pipeline {
         }
       }
     }
-    /*
     stage('5. Deploy to K8s with Helm') {
       steps {
         sh """
-          helm upgrade --install hello-flask ./helm-chart \
+          helm upgrade --install hello-flask ./hello-flask \
             --set image.repository=${REGISTRY} \
-            --set image.tag=${env.GIT_COMMIT.take(7)}
+            --set image.tag=${IMAGE_SHA_TAG}
         """
       }
     }
     stage('6. Smoke Test') {
       steps {
-        sh 'curl -f http://your-cluster-ip-or-dns/'
+        sh 'curl -f http://hello-flask.justinseaman.com/'
       }
     }
   }
-  */
-  
   }
   post {
     success {
       emailext(
         from: "justin_seaman@outlook.com",
         subject: "Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: "The Jenkins job ${env.JOB_NAME} build #${env.BUILD_NUMBER} completed successfully.\n\nImage: ${env.IMAGE_SHA_TAG}\n\nSee details: ${env.BUILD_URL}",
+        body: "The Jenkins job ${env.JOB_NAME} build #${env.BUILD_NUMBER} completed successfully.\n\nImage: ${IMAGE_SHA_TAG}\n\nSee details: ${env.BUILD_URL}",
         to: "justin_seaman@outlook.com, jmseaman0f@gmail.com"
       )
     }
