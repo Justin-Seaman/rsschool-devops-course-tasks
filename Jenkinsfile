@@ -10,7 +10,7 @@ pipeline {
   stages {
     stage('Checkout Code') {
       steps {
-        git 'https://github.com/your-user/your-repo.git' // Replace with your actual repo
+        checkout scm
       }
     }
 
