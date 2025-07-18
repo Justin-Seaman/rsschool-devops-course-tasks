@@ -72,6 +72,7 @@ pipeline {
             --skip-tls-verify
             """
           }
+          env.SHORT_SHA = shortSha
           env.IMAGE_SHA_TAG = imageTagSha
         }
       }
@@ -86,6 +87,8 @@ pipeline {
         container('helm') {
             sh """
               helm upgrade --install hello-flask ./hello-flask \
+              --set image.name=${REGISTRY} \
+              --set image.tag=${SHORT_SHA}
             """
         }
       }
@@ -98,7 +101,7 @@ pipeline {
       }
       steps {
         container('jnlp'){
-            sh 'curl -f http://hello-flask.justinseaman.com/'
+            sh 'curl -f https://hello-flask.justinseaman.com/'
         }
       }
     }
