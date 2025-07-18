@@ -1,11 +1,9 @@
 pipeline {
   agent none
-  
   environment {
     REGISTRY = "justinmseaman/hello-flask"
 
   }
-  
   stages {
     stage('1. Application Build') {
       agent{
@@ -42,7 +40,7 @@ pipeline {
             python --version
             cd flask_app
             pwd
-            pytest tests/test_app.py --maxfail=1 --disable-warnings --tb=short'
+            pytest tests/test_app.py --maxfail=1 --disable-warnings --tb=short
           '''
         }
       }
@@ -70,7 +68,7 @@ pipeline {
         }
       }
       steps {
-        checkout scm
+        //checkout scm
 
         script {
           def sha = env.GIT_COMMIT ?: 'manual'
@@ -109,6 +107,8 @@ pipeline {
     }
   }
   */
+  
+  }
   post {
     success {
       emailext(
@@ -127,5 +127,4 @@ pipeline {
       )
     }
   }
-}
 }
