@@ -12,12 +12,3 @@ def hello():
 def get_hostname():
     hostname = socket.gethostname()
     return f"This pod's hostname is: {hostname}"
-
-@app.route('/request')
-def whoami():
-    return jsonify({
-        "json": request.json,
-        "headers": dict(request.headers),
-        "method": request.method,
-        "remote_addr": request.remote_addr
-    })
