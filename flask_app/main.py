@@ -1,5 +1,5 @@
 import socket
-from flask import Flask
+from flask import Flask, request
 
 app = Flask(__name__)
 
@@ -12,3 +12,10 @@ def hello():
 def get_hostname():
     hostname = socket.gethostname()
     return f"This pod's hostname is: {hostname}"
+
+@app.route('/whoami'):
+def whoami():
+    return {
+        "ip": request.remote_addr,
+        "user_agent": request.headers.get("User-Agent")
+    }
