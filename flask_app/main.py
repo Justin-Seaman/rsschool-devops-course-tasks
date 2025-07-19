@@ -16,6 +16,5 @@ def get_hostname():
 @app.route('/whoami')
 def whoami():
     return {
-        "ip": request.remote_addr,
-        "user_agent": request.headers.get("User-Agent")
+        "request": request
     }
