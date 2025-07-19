@@ -2,7 +2,13 @@
 
 ![task_6 schema](.visual_assets/task_4-6.png)
 
+
+
+
 ## TLDR
+
+**Try it for yourself!** Go to [https://hello-flask.justinseaman.com](https://hello-flask.justinseaman.com) (*protected by Cloudflare ZeroTrust)
+
 Initialized a CI/CD pipeline in Jenkinsfile with build/test/deploy/integrate steps for the [/flask_app](/flask_app/).
 
 Review the [Solution Outcomes](#solution-outcomes) for the evidence of pipeline for review.
