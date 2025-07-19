@@ -2,6 +2,11 @@
 
 ![task_6 schema](.visual_assets/task_4-6.png)
 
+## TLDR
+Initialized a CI/CD pipeline in Jenkinsfile with build/test/deploy/integrate steps for the [/flask_app](/flask_app/).
+
+Review the [Solution Outcomes](#solution-outcomes) for the evidence of pipeline for review.
+
 ## Basic Infrastructure Configuration
 
 For this task, I am re-using my Application Dockerfile and Helm chart from Task 4 Branch. `flask_app` is the core app directory from [source repo](https://github.com/rolling-scopes-school/tasks/tree/master/devops/flask_app) and `hello-flask` is the helm chart for this app.
@@ -54,6 +59,8 @@ helm install jenkins -n jenkins -f jenkins-values.yaml $chart
 You can now confirm that Jenkins is running on your cluster's node port by running `minikube ip` and navigating to the http://ip-address:320000
 ![.visual_assets/local_jenkins.png](.visual_assets/local_jenkins.png)
 
+Finally, you will need to run the secret creation shell scripts in the .jenkins repository with your approraite values to enable GitHub SSO and Docker build tasks. See Readme doc in /.jenkins for more info.
+
 ### Quickly Serving out the Service Using Cloudfared
 Because I am running this from my home computer on non-business internet, I would need some type of Dynamice DNS or Proxy to serve my site publicly for use with GitHub Webhooks. Using webhooks will be critical for triggering the run on repo actions like Push. Webhooks will not send properly to my Private IP, because it is sent from GitHub's services, not my local computer.
 
@@ -75,6 +82,7 @@ The Objective of Jenkins Pipeline Configuration is to:
 1. Use a Jenkinsfile stored in the git repository to handle Pipeline logic (much like GitHub Actions artifacts are directly associated with repo).
 2. Establish Webhook communication from GitHub to Jenkins on key repo events.
 
+#### Manual Steps for GitHub Webhooks Trigger
 When building the pipeline, I did the following:
 1. Set the following fields on the Pipeline Configure page:
 + **Description:** 
@@ -127,23 +135,50 @@ retry(3) {
 5. Check your pipeline on Push for the output of the test Jenkinsfile (should see checkout and run of Jenkinsfile, along with Hello World #0-9).
 ![.visual_assets/test-pipeline.png](.visual_assets/test-pipeline.png)
 
++ TODO: Create the barbones for this pipeline with a JobDSL script.
++ TODO: Script the creation of the [GitHub App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps) for ease of startup in new users/orgs. Overall, much lower lift on future repos as you recylce Credential Provider and simply [authorize for the repo in GitHub](https://docs.github.com/en/rest/apps/installations?apiVersion=2022-11-28#add-a-repository-to-an-app-installation).
+
 ### Turning the Jenkinsfile into a CI/CD pipeline
 
-Requirements for the following steps in the pipeline:
-1. Application build
-   + I already handled a
-2. Unit test execution
-   + Use [pytest](https://docs.pytest.org/en/stable/) to assert a response of 200 at the root of the flask app. 
-3. Security check with SonarQube
+Find the following stages in [Jenkinsfile](./Jenkinsfile)
+1. Application build and test
+   + Simple build and test that only runs Sonar and later after pass of Unit Tests.
+   + Use [pytest](https://docs.pytest.org/en/stable/) to assert a response of 200 at the root of the flask app.
+      + Unit tests exist and can be created within [tests](./flask_app/tests/) directory in the app.
+      + Uses a sepearte requirements file for unit test packages. `requirements-dev.txt` 
+2. Security check with SonarQube
    + Static code analysis with Sonar will use the [Jenkins Plugin](https://github.com/jenkinsci/sonarqube-plugin) and a [Sonar Cloud](https://sonarcloud.io/) free account.
-4. Docker image building and pushing to any Registry
-   + Already handled in my GHA plan from task_5. Will refactor for Groovy/Jenkinsfile.
-5. Deployment to the K8s cluster with Helm (dependent on the previous step)
-   + Once Docker image built and published, a Helm build with the same tag should pull it down for CD
-6. (Optional) Application verification (e.g., curl the main page, send requests to API, smoke test)
-   + Quick smoke test to the private IP of the application. 
+      + Depends on 'SONARQUBE_ENV' configuration in [jenkins-values](./.jenkins/jenkins-values.yaml), particularly JCasC `sonar-cloud-config.yaml`.
+      + In my testing I manual created a credential for this and later implemented JCasC to call the secret. May need to comment this JCasC out until you create a Generic credential secret file with the [Sonar Token](https://docs.sonarsource.com/sonarqube-server/10.1/user-guide/user-account/generating-and-using-tokens/) as `sonar-token-id`. 
+         + TODO: Implement a Kubectl cluster secret creation for this purpose and pull in with JCasC as this secret.
+3. Docker image building and pushing to any Registry
+   + Decided to use [kankiko](https://github.com/GoogleContainerTools/kaniko) container to build docker image to avoid issues with DinD. However, kaniko is no longer maintained and may be deprecated in the near future. 
+      + TODO: find alternative Docker build and deploy method than kanki. 
+4. Deployment to the K8s cluster with Helm (dependent on the previous step)
+   + Once Docker image built and published, a Helm build with the same tag should pull it down for CD. For testing purporses, I am building within `jenkins` namespace. Currently the associated NodeIp is set in my cloudflared config for serving [hello-flask](https://hello-flask.justinseaman.com), but may attempt to bundle the cloudlfared workers with some backend tunnel and route configuration with [Terraform](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/deployment-guides/terraform/).
+      + TODO: Implement helm chart to handle creeation of cloudflared pods in the namespace for HTTPS Proxy.
+      + TODO: Simultaneously set vars in Terraform for backend configuration of Cloudflare Zero Trust platform.
+5. (Optional) Application verification (e.g., curl the main page, send requests to API, smoke test)
+   + Quick smoke test to the private IP of the application. `sh 'curl -f https://hello-flask.justinseaman.com/'`
 
+6. Additionally, I configured [Amazon SES](https://aws.amazon.com/ses/) and created secret for username/password for this SMTP connection prior to the creation of [jenkins-values](./.jenkins/jenkins-values.yaml) JCasC `amazon-ses-config.yaml`. See AWS docs on [setting up SMTP on SES](https://docs.aws.amazon.com/ses/latest/dg/send-email-smtp.html) for guidance on token creation.
+   + This enables emailext() commands in my post.succes|failure of the pipeline which will trigger email send to my default email address.
+      + TODO: Make the secret creation and email address from/to dynamic.
 
+## Solution Outcomes:
+
++ Passing Pipepline:
+   + ![.visual_assets/passed-pipeline.png](.visual_assets/passed-pipeline.png)
++ SES notification:
+   + ![.visual_assets/ses-notif.png](.visual_assets/ses-notif.png)
++ Docker Hub Deployment:
+   + ![.visual_assets/docker-hub.png](.visual_assets/docker-hub.png)
++ Sonar Project:
+   + ![.visual_assets/sonar-cloud.png](.visual_assets/sonar-cloud.png)
++ Helm Deploy:
+   + ![.visual_assets/helm-deploy.png](.visual_assets/helm-deploy.png)
++ GitHub Trigger:
+   + See [#### Manual Steps for GitHub Webhooks Trigger](#manual-steps-for-github-webhooks-trigger)
 ## Objective
 
 In this task, you will configure a Jenkins pipeline to deploy your application on a Kubernetes (K8s) cluster. The pipeline will cover the software lifecycle phases of build, testing, and deployment.
@@ -157,7 +192,7 @@ In this task, you will configure a Jenkins pipeline to deploy your application o
 
 2. **Pipeline Steps**
 
-   - [ ]The pipeline should include the following steps:
+   - [x] The pipeline should include the following steps:
      1. Application build
      2. Unit test execution
      3. Security check with SonarQube
@@ -166,17 +201,17 @@ In this task, you will configure a Jenkins pipeline to deploy your application o
      6. (Optional) Application verification (e.g., curl the main page, send requests to API, smoke test)
 
 3. **Application verification**
-   - [ ]Ensure that the pipeline runs successfully and deploys the application to the K8s cluster.
+   - [x] Ensure that the pipeline runs successfully and deploys the application to the K8s cluster.
 4. **Additional Tasks💫**
-   - [ ]Set up a notification system to alert on pipeline failures or successes.
-   - [ ]Document the pipeline setup and deployment process in a README file.
+   - [x] Set up a notification system to alert on pipeline failures or successes.
+   - [x] Document the pipeline setup and deployment process in a README file.
 
 ## Submission
 
-- [ ]Create a `task_6` branch from `main` in your repository.
-- [ ] Provide a PR with the application, Helm chart, and Jenkinsfile in a repository.
-- [ ] Provide a screenshot of passed Jenkins pipeline
-- [ ] Provide a README file documenting the pipeline setup and deployment process.
+- [x] Create a `task_6` branch from `main` in your repository.
+- [x] Provide a PR with the application, Helm chart, and Jenkinsfile in a repository.
+- [x] Provide a screenshot of passed Jenkins pipeline
+- [x] Provide a README file documenting the pipeline setup and deployment process.
 
 ## Evaluation Criteria (100 points for covering all criteria)
 
