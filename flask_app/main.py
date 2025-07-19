@@ -1,5 +1,5 @@
 import socket
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -13,8 +13,11 @@ def get_hostname():
     hostname = socket.gethostname()
     return f"This pod's hostname is: {hostname}"
 
-@app.route('/whoami')
+@app.route('/request')
 def whoami():
-    return {
-        "request": request
-    }
+    return jsonify({
+        "json": request.json,
+        "headers": dict(request.headers),
+        "method": request.method,
+        "remote_addr": request.remote_addr
+    })
