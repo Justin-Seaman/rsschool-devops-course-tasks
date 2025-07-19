@@ -14,12 +14,24 @@ For this task, I am re-using my Application Dockerfile and Helm chart from Task 
 I also included the Jenkins configuration used to run this deployment in a .jenkins file. Longterm plan is to add the Pipeline intialization to the JCasC config along with the HelloWorld.
 
 *I may attempt to add a helm chart to deploy the (Cloudlfard Helm Chart)[https://github.com/cloudflare/helm-charts] so I no longer need to depend on NodeIp and can handle Ingress with this proxy. To do this I would probably just capture the full helm chart for jenkins and add cloudflared to the /charts directory.*
+   - [x] accomplished with [bash script for now](/.cloudflared/cloudflare_tunnel_build.sh)
 
 ```plaintext
-├───.jenkins
-├───flask_app   
-└───hello-flask
-    └───templates
+├───.cloudflared/
+    └───cloudflare_tunnel_build.sh - basic cloudlfare tunnel init script for public https proxy
+├───.jenkins/
+    └───*Contents from Task_4 for Jenkins Service runninng with helm
+├───.visual_assets/
+    └───*images for readme
+├───flask_app/
+    ├───main.py - generic test application running flask webservices
+    ├───Dockerfile - Docker build instructions for kaniko
+    └───test/
+        └───*Unit tests to run at build
+├───hello-flask/
+    └───*helm chart for flask_app deployment after build and deploy to docker-hub
+└───pods/
+    └───*k8s pod definitions for various CI/CD tasks
 ```
 ### Creating a running Jenkins K8s service locally:
 I am running on a minikube node for local dev.
@@ -76,6 +88,10 @@ This is essentially an open NAT and HTTPS proxy from http://<private-ip>:320000 
 Confirm access by navigating to the Application's URL.
 ![.visual_assets/pub_jenkins.png](.visual_assets/pub_jenkins.png)
 You can restrict the policies and define more granular WAF policies as needed (e.g. only bypass on /webhooks and /securityRealm/finishLogin while forcing ZeroTrust auth on other paths)
+
++ I have integrated my cloudflared deployment onto the cluster with [bash script](/.cloudflared/cloudflare_tunnel_build.sh). Now instead of needing to enable NodePort and run cloudflared on my host, I can just rely on private ip served from K8s DNS as http://<svc-name>.<namespace>.svc.cluster.local:<port>. 
+   + This is useful for my Cloudflare config as minikube's private ip may change from stop starts. So long as my cf proxy is up alongside my jenkins service, I can rely on the public dns name of my services.
+   + I also setup stricter access requirements for my applications, only allowing bypass on necessary paths for Jenkins to act as an api-endpoint of GitHub (e.g. /webhooks and /securityRealm/finishLogin).
 
 ### Pipeline Initialization in Jenkins
 The Objective of Jenkins Pipeline Configuration is to:

@@ -1,3 +1,4 @@
+#!/bin/bash
 $YOUR_USERNAME="user"
 $YOUR_PASSWORD="PAT"
 $YOUR_EMAIL="email@example.com"

@@ -1,3 +1,4 @@
+#!/bin/bash
 helm repo add cloudflare https://cloudflare.github.io/helm-charts
 helm repo update
 
