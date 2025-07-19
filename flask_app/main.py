@@ -13,7 +13,7 @@ def get_hostname():
     hostname = socket.gethostname()
     return f"This pod's hostname is: {hostname}"
 
-@app.route('/whoami'):
+@app.route('/whoami')
 def whoami():
     return {
         "ip": request.remote_addr,
