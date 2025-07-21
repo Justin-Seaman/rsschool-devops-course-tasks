@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins: kaniko
+spec:
+  containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:debug
+      command:
+        - /busybox/sh
+      tty: true
+      volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker
+          readOnly: true
+  restartPolicy: Never
+  volumes:
+    - name: docker-config
+      secret:
+        secretName: regcred # Created in .jenkins/dockerhub_secrets.sh
+        items:
+          - key: .dockerconfigjson
+            path: config.json
