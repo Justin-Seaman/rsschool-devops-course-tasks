@@ -39,7 +39,7 @@ pipeline {
       steps {
         container('helm') {
           sh '''
-            cd ../grafana
+            cd ./monitors/grafana
             #Using prometheus-commmunity because Bitnami EOL on 8.25.2025
             repo="https://grafana.github.io/helm-charts"
             name="grafana"
