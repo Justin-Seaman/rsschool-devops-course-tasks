@@ -1,71 +1,23 @@
-# Namespace-scoped Role for Jenkins in its own namespace
+# prometheus-clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: jenkins-deployer
-  namespace: jenkins
+  name: prometheus-community-server
 rules:
-  - apiGroups: [""]
-    resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "serviceaccounts"]
-    verbs: ["*"]
-  - apiGroups: ["apps"]
-    resources: ["deployments", "statefulsets", "replicasets"]
-    verbs: ["*"]
-  - apiGroups: ["batch"]
-    resources: ["jobs", "cronjobs"]
-    verbs: ["*"]
-  - apiGroups: ["rbac.authorization.k8s.io"]
-    resources: ["roles", "rolebindings"]
-    verbs: ["create", "get", "bind"]
-
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: jenkins-deployer-binding
-  namespace: jenkins
+  name: prometheus-community-server-binding
 subjects:
   - kind: ServiceAccount
     name: default
     namespace: jenkins
 roleRef:
-  kind: Role
-  name: jenkins-deployer
-  apiGroup: rbac.authorization.k8s.io
-
----
-
-# Same Role/Binding in the monitoring namespace
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: monitoring-deployer
-  namespace: monitoring
-rules:
-  - apiGroups: [""]
-    resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "serviceaccounts"]
-    verbs: ["*"]
-  - apiGroups: ["apps"]
-    resources: ["deployments", "statefulsets", "replicasets"]
-    verbs: ["*"]
-  - apiGroups: ["batch"]
-    resources: ["jobs", "cronjobs"]
-    verbs: ["*"]
-  - apiGroups: ["rbac.authorization.k8s.io"]
-    resources: ["roles", "rolebindings"]
-    verbs: ["create", "get", "bind"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: monitoring-deployer-binding
-  namespace: monitoring
-subjects:
-  - kind: ServiceAccount
-    name: default
-    namespace: jenkins
-roleRef:
-  kind: Role
-  name: monitoring-deployer
+  kind: ClusterRole
+  name: prometheus-community-server
   apiGroup: rbac.authorization.k8s.io
