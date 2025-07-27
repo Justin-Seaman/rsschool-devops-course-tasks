@@ -684,7 +684,53 @@ datasources:
 ## Configure grafana alerting (can be templated)
 ## ref: https://docs.grafana.com/alerting/set-up/provision-alerting-resources/file-provisioning/
 ##
-alerting: {}
+alerting:
+  contactPoints:
+    enabled: true
+    contactPoints:
+      - name: email-alert
+        type: email
+        settings:
+          addresses: justin_seaman@outlook.com
+          singleEmail: true
+          
+  
+  notificationPolicies:
+    enabled: true
+    policies:
+      - receiver: email-alert
+        group_by: ['alertname']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+  
+  rules:
+    enabled: true
+    rules:
+      - orgId: 1
+        name: pod-cpu-alert-group
+        folder: "Default"
+        interval: 30s
+        rules:
+          - uid: high-pod-cpu
+            title: High Pod CPU Usage
+            condition: A
+            data:
+              - refId: A
+                datasourceUid: prometheus
+                model:
+                  expr: sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) by (pod)
+                  format: time_series
+                  instant: false
+                  interval: ""
+                  refId: A
+                  datasource:
+                    type: prometheus
+                    uid: prometheus
+            noDataState: Alerting
+            for: 1m
+            labels:
+              severity: warning
   # policies.yaml:
   #   apiVersion: 1
   #   policies:
@@ -830,17 +876,793 @@ defaultCurlOptions: "-skf"
 ##
 dashboards:
   default:
-  #  kube-dashboard:
-  #    json: 
+    kube-dashboard:
+      json: |
+        {
+        "annotations": {
+          "list": [
+            {
+              "builtIn": 1,
+              "datasource": {
+                "type": "grafana",
+                "uid": "-- Grafana --"
+              },
+              "enable": true,
+              "hide": true,
+              "iconColor": "rgba(0, 211, 255, 1)",
+              "name": "Annotations & Alerts",
+              "type": "dashboard"
+            }
+          ]
+        },
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "id": 2,
+        "links": [],
+        "panels": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "percent"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 4,
+              "x": 0,
+              "y": 0
+            },
+            "id": 2,
+            "options": {
+              "minVizHeight": 75,
+              "minVizWidth": 75,
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showThresholdLabels": false,
+              "showThresholdMarkers": true,
+              "sizing": "auto"
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "editorMode": "code",
+                "expr": "(sum(node_filesystem_size_bytes{device!=\"rootfs\",instance=\"$Server\"}) - sum(node_filesystem_free_bytes{device!=\"rootfs\",instance=\"$Server\"})) / sum(node_filesystem_size_bytes{device!=\"rootfs\",instance=\"$Server\"})*100",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Percent Disk Used",
+            "type": "gauge"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0.1,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "percent"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 4,
+              "x": 4,
+              "y": 0
+            },
+            "id": 1,
+            "options": {
+              "minVizHeight": 75,
+              "minVizWidth": 75,
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showThresholdLabels": false,
+              "showThresholdMarkers": true,
+              "sizing": "auto"
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "PBFA97CFB590B2093"
+                },
+                "editorMode": "code",
+                "expr": "((node_memory_MemTotal_bytes{instance=\"$Server\"} - node_memory_MemFree_bytes{instance=\"$Server\"}  - node_memory_Buffers_bytes{instance=\"$Server\"} - node_memory_Cached_bytes{instance=\"$Server\"}) / node_memory_MemTotal_bytes{instance=\"$Server\"}) * 100",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Percent Memory",
+            "type": "gauge"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "mappings": [],
+                "max": 100,
+                "min": 0.1,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "percent"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 15,
+              "x": 8,
+              "y": 0
+            },
+            "id": 7,
+            "options": {
+              "minVizHeight": 75,
+              "minVizWidth": 75,
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showThresholdLabels": false,
+              "showThresholdMarkers": true,
+              "sizing": "auto"
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "PBFA97CFB590B2093"
+                },
+                "editorMode": "code",
+                "expr": "100 - (avg by (cpu) (irate(node_cpu_seconds_total{mode=\"idle\", instance=\"$Server\"}[5m])) * 100)",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "CPU Core Utilization",
+            "type": "gauge"
+          },
+          {
+            "datasource": {
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    }
+                  ]
+                },
+                "unit": "decbytes"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 5,
+              "w": 4,
+              "x": 0,
+              "y": 8
+            },
+            "id": 4,
+            "options": {
+              "colorMode": "none",
+              "graphMode": "none",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "editorMode": "code",
+                "expr": "sum(node_filesystem_size_bytes{device!=\"rootfs\",instance=\"$Server\"}) - sum(node_filesystem_free_bytes{device!=\"rootfs\",instance=\"$Server\"})",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Used Disk",
+            "type": "stat"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    }
+                  ]
+                },
+                "unit": "decbytes"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 5,
+              "w": 4,
+              "x": 4,
+              "y": 8
+            },
+            "id": 5,
+            "options": {
+              "colorMode": "none",
+              "graphMode": "none",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "editorMode": "code",
+                "expr": "sum(node_memory_MemTotal_bytes{instance=\"$Server\"} - node_memory_MemFree_bytes{instance=\"$Server\"}  - node_memory_Buffers_bytes{instance=\"$Server\"} - node_memory_Cached_bytes{instance=\"$Server\"})",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Consumed Memory",
+            "type": "stat"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "barWidthFactor": 0.6,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "smooth",
+                  "lineStyle": {
+                    "fill": "solid"
+                  },
+                  "lineWidth": 3,
+                  "pointSize": 1,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    }
+                  ]
+                },
+                "unit": "Bps"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "sum(rate(node_network_receive_bytes_total{instance=\"172.21.98.148:9100\",device!~\"lo\"}[5m]))"
+                  },
+                  "properties": [
+                    {
+                      "id": "displayName",
+                      "value": "RX"
+                    },
+                    {
+                      "id": "color",
+                      "value": {
+                        "mode": "continuous-blues"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "sum(rate(node_network_transmit_bytes_total{instance=\"172.21.98.148:9100\",device!~\"lo\"}[5m]))"
+                  },
+                  "properties": [
+                    {
+                      "id": "displayName",
+                      "value": "TX"
+                    },
+                    {
+                      "id": "color",
+                      "value": {
+                        "mode": "continuous-greens"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "gridPos": {
+              "h": 10,
+              "w": 15,
+              "x": 8,
+              "y": 8
+            },
+            "id": 8,
+            "options": {
+              "legend": {
+                "calcs": [],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "hideZeros": false,
+                "mode": "single",
+                "sort": "none"
+              }
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "editorMode": "code",
+                "expr": "sum(rate(node_network_receive_bytes_total{instance=\"$Server\",device!~\"lo\"}[5m]))",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "RX"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "PBFA97CFB590B2093"
+                },
+                "editorMode": "code",
+                "expr": "sum(rate(node_network_transmit_bytes_total{instance=\"$Server\",device!~\"lo\"}[5m]))",
+                "hide": false,
+                "instant": false,
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "TX"
+              }
+            ],
+            "title": "Network Traffic",
+            "type": "timeseries"
+          },
+          {
+            "datasource": {
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    }
+                  ]
+                },
+                "unit": "decbytes"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 5,
+              "w": 4,
+              "x": 0,
+              "y": 13
+            },
+            "id": 3,
+            "options": {
+              "colorMode": "none",
+              "graphMode": "none",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "editorMode": "code",
+                "expr": "sum(node_filesystem_size_bytes{device!=\"rootfs\",instance=\"$Server\"})",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Max Disk Size",
+            "type": "stat"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    }
+                  ]
+                },
+                "unit": "decbytes"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 5,
+              "w": 4,
+              "x": 4,
+              "y": 13
+            },
+            "id": 6,
+            "options": {
+              "colorMode": "none",
+              "graphMode": "none",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "editorMode": "code",
+                "expr": "node_memory_MemTotal_bytes{instance=\"$Server\"}",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Total Memory",
+            "type": "stat"
+          },
+          {
+            "datasource": {
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "continuous-GrYlRd"
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 18
+            },
+            "id": 9,
+            "options": {
+              "displayMode": "gradient",
+              "legend": {
+                "calcs": [],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": false
+              },
+              "maxVizHeight": 300,
+              "minVizHeight": 16,
+              "minVizWidth": 8,
+              "namePlacement": "auto",
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showUnfilled": true,
+              "sizing": "auto",
+              "valueMode": "color"
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "editorMode": "code",
+                "expr": "count by (namespace) (kube_pod_info)",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Pods per namespace",
+            "type": "bargauge"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green"
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 11,
+              "x": 12,
+              "y": 18
+            },
+            "id": 10,
+            "options": {
+              "displayMode": "gradient",
+              "legend": {
+                "calcs": [],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": false
+              },
+              "maxVizHeight": 300,
+              "minVizHeight": 16,
+              "minVizWidth": 8,
+              "namePlacement": "auto",
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showUnfilled": true,
+              "sizing": "auto",
+              "valueMode": "color"
+            },
+            "pluginVersion": "12.0.2",
+            "targets": [
+              {
+                "editorMode": "code",
+                "expr": "count by (namespace) (kube_pod_status_phase{phase=\"Running\"})",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Running Pods per Namespace",
+            "type": "bargauge"
+          }
+        ],
+        "preload": false,
+        "schemaVersion": 41,
+        "tags": [],
+        "templating": {
+          "list": [
+            {
+              "current": {
+                "text": "172.21.98.148:9100",
+                "value": "172.21.98.148:9100"
+              },
+              "definition": "label_values(node_boot_time_seconds,instance)",
+              "name": "Server",
+              "options": [],
+              "query": {
+                "qryType": 1,
+                "query": "label_values(node_boot_time_seconds,instance)",
+                "refId": "PrometheusVariableQueryEditor-VariableQuery"
+              },
+              "refresh": 1,
+              "regex": "",
+              "type": "query"
+            }
+          ]
+        },
+        "time": {
+          "from": "2025-07-27T05:56:41.238Z",
+          "to": "2025-07-27T06:06:41.238Z"
+        },
+        "timepicker": {},
+        "timezone": "browser",
+        "title": "New dashboard",
+        "uid": "a145f0c6-fafe-474d-bcb2-eaa791592a46",
+        "version": 22
+        }
   #   some-dashboard:
   #     json: |
   #       $RAW_JSON
   #   custom-dashboard:
   #     file: dashboards/custom-dashboard.json
-     prometheus-stats:
-       gnetId: 8171
-       revision: 1
-       datasource: Prometheus
+  #   prometheus-stats:
+  #     gnetId: 8171
+  #     revision: 1
+  #     datasource: Prometheus
   #   local-dashboard:
   #     url: https://example.com/repository/test.json
   #     curlOptions: "-sLf"
@@ -883,8 +1705,14 @@ grafana.ini:
     provisioning: /etc/grafana/provisioning
   analytics:
     check_for_updates: true
+  smtp:
+    enabled: true
+    host: email-smtp.us-east-2.amazonaws.com:587
+    from_address: justin_seaman@outlook.com
+    startTLS_Policy: 'MandatoryStartTLS'
   log:
     mode: console
+    level: debug
   grafana_net:
     url: https://grafana.net
   server:
@@ -950,7 +1778,7 @@ shareProcessNamespace: false
 smtp:
   # `existingSecret` is a reference to an existing secret containing the smtp configuration
   # for Grafana.
-  existingSecret: ""
+  existingSecret: grafana-smtp-secret
   userKey: "user"
   passwordKey: "password"
 
