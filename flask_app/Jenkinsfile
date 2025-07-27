@@ -1,19 +1,49 @@
 pipeline {
-  agent {
-    kubernetes {
-      yamlFile 'pods/helm-pod.yaml'
-    }
-  }    
+  agent none
+  environment {
+    REGISTRY = "justinmseaman/hello-flask"
+
+  }
   stages {
-    stage('1. Monitor Pipeline Checkout and confirm helm') {
+    stage('1 & 2. Application Build and Unit Tests') {
+      agent{
+        kubernetes {
+          yamlFile 'pods/python-pod.yaml' 
+        }
+      }
       steps {
         checkout scm
+
+        container('python'){
+          sh '''
+            python --version
+            cd flask_app
+            export PYTHONPATH=$(pwd):$PYTHONPATH
+            pwd
+            pip install -r requirements.txt
+            pip install -r requirements-dev.txt
+            cd ..
+            ls -la ./flask_app/tests
+            pytest flask_app/tests/test_app.py --maxfail=1 --disable-warnings --tb=short
+          '''
+        }
       } 
     }
-    /*
-    stage('2. Prometheus install') {
+    stage('3. SonarQube Scan') {
+      agent{
+        kubernetes {
+          yamlFile 'pods/sonar-pod.yaml' 
+        }
+      }
+      environment {
+        SONAR_TOKEN = credentials('sonar-token-id')
+      }
       steps {
-        
+        container('sonar-scanner'){
+          withSonarQubeEnv('SONARQUBE_ENV') {
+            sh 'sonar-scanner -Dsonar.projectKey=task_6 -Dsonar.organization=justinseaman -Dsonar.sources=flask_app -Dsonar.token=$SONAR_TOKEN'
+          }
+        }
       }
     }
 
@@ -93,6 +123,5 @@ pipeline {
         to: "justin_seaman@outlook.com, jmseaman0f@gmail.com"
       )
     }
-    */
   }
 }
