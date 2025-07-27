@@ -28,7 +28,7 @@ pipeline {
             valueFile="prometheus-values.yaml"
             #DEFAULT:wget https://raw.githubusercontent.com/prometheus-community/helm-charts/main/charts/prometheus/values.yaml -O $valueFile
             #Set namespace
-            namespace="jenkins"
+            namespace="monitoring"
             #Install/Upgrade
             helm upgrade --install $name $chart --namespace $namespace -f $valueFile
           '''

@@ -556,7 +556,7 @@ server:
 
     ## Prometheus server data Persistent Volume mount root path
     ##
-    mountPath: /data/prometheus
+    mountPath: /data
 
     ## Prometheus server data Persistent Volume size
     ##
@@ -569,7 +569,7 @@ server:
     ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
     ##   GKE, AWS & OpenStack)
     ##
-    storageClass: "prometheus-pv"
+    # storageClass: "-"
 
     ## Subdirectory of Prometheus server data Persistent Volume to mount
     ## Useful if the volume's root directory is not empty

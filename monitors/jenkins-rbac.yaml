@@ -1,26 +1,28 @@
-# jenkins-rbac.yaml
+# Namespace-scoped Role for Jenkins in its own namespace
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: jenkins-deployer
   namespace: jenkins
-  name: jenkins-pipeline-role
 rules:
   - apiGroups: [""]
-    resources: ["pods", "services", "endpoints", "configmaps", "serviceaccounts"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "serviceaccounts"]
+    verbs: ["*"]
   - apiGroups: ["apps"]
     resources: ["deployments", "statefulsets", "replicasets"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["*"]
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles", "rolebindings"]
-    verbs: ["create", "get", "list", "bind"]
+    verbs: ["create", "get", "bind"]
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: jenkins-pipeline-binding
+  name: jenkins-deployer-binding
   namespace: jenkins
 subjects:
   - kind: ServiceAccount
@@ -28,5 +30,42 @@ subjects:
     namespace: jenkins
 roleRef:
   kind: Role
-  name: jenkins-pipeline-role
+  name: jenkins-deployer
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+# Same Role/Binding in the monitoring namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: monitoring-deployer
+  namespace: monitoring
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "serviceaccounts"]
+    verbs: ["*"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "replicasets"]
+    verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["*"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["create", "get", "bind"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: monitoring-deployer-binding
+  namespace: monitoring
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: jenkins
+roleRef:
+  kind: Role
+  name: monitoring-deployer
   apiGroup: rbac.authorization.k8s.io
