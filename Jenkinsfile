@@ -35,37 +35,33 @@ pipeline {
         }
       }
     }
-    /*
-    stage('4. Docker image building and pushing to any Registry') {
-      agent{
-        kubernetes {
-          yamlFile 'pods/kaniko-pod.yaml' // This file defines the kaniko container
-        }
-      }
+    stage('3. Grafana Install') {
       steps {
-        //checkout scm
-
-        script {
-          def sha = env.GIT_COMMIT ?: 'manual'
-          def shortSha = sha.take(7)
-          def imageTagSha = "${env.REGISTRY}:${shortSha}"
-          def imageTagLatest = "${env.REGISTRY}:latest"
-          container('kaniko') {
-          sh """
-            cd flask_app 
-            /kaniko/executor \
-            --context `pwd` \
-            --dockerfile `pwd`/Dockerfile \
-            --destination ${imageTagSha} \
-            --destination ${imageTagLatest} \
-            --skip-tls-verify
-            """
-          }
-          env.SHORT_SHA = shortSha
-          env.IMAGE_SHA_TAG = imageTagSha
+        container('helm') {
+          sh '''
+            cd ./monitors/grafana
+            #Using prometheus-commmunity because Bitnami EOL on 8.25.2025
+            repo="https://grafana.github.io/helm-charts"
+            name="grafana"
+            #Update repo sources
+            helm repo add $name $repo
+            helm repo update
+            #Confirm presence of chart
+            chart="grafana/grafana"
+            helm search repo $chart
+            #Get the values file from repo for modification
+            #valueFile="grafana-values.yaml"
+            #DEFAULT:wget https://raw.githubusercontent.com/prometheus-community/helm-charts/main/charts/prometheus/values.yaml -O $valueFile
+            #Set namespace
+            namespace="jenkins"
+            #Install/Upgrade
+            helm upgrade --install $name $chart --namespace $namespace 
+            #-f $valueFile
+          '''
         }
       }
     }
+    /*
     stage('5. Deploy to K8s with Helm') {
       agent{
         kubernetes {
