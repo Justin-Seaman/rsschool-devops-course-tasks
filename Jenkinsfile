@@ -63,36 +63,6 @@ pipeline {
         }
       }
     }
-    /*
-    stage('5. Deploy to K8s with Helm') {
-      agent{
-        kubernetes {
-          yamlFile 'pods/helm-pod.yaml'
-        }
-      }
-      steps {
-        container('helm') {
-            sh """
-              helm upgrade --install hello-flask ./hello-flask \
-              --set image.name=${REGISTRY} \
-              --set image.tag=${SHORT_SHA}
-            """
-        }
-      }
-    }
-    stage('6. Smoke Test') {
-      agent {
-        kubernetes {
-          label 'default'
-        }
-      }
-      steps {
-        container('jnlp'){
-            sh 'curl -f https://hello-flask.justinseaman.com/'
-        }
-      }
-    }
-  }
   post {
     success {
       emailext(
