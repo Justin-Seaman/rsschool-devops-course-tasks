@@ -29,13 +29,8 @@ pipeline {
             #DEFAULT:wget https://raw.githubusercontent.com/prometheus-community/helm-charts/main/charts/prometheus/values.yaml -O $valueFile
             #Set namespace
             namespace="jenkins"
-            kubectl create namespace $namespace
             #Install/Upgrade
             helm upgrade --install $name $chart --namespace $namespace -f $valueFile
-            #Get service
-            export POD_NAME=$(kubectl get pods --namespace $namespace -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus-community" -o jsonpath="{.items[0].metadata.name}")
-            #forward on 9090
-            #kubectl --namespace monitoring port-forward $POD_NAME 9090
           '''
         }
       }
