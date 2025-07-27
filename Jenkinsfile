@@ -1,107 +1,65 @@
 pipeline {
-  agent none
-  environment {
-    REGISTRY = "justinmseaman/hello-flask"
-
-  }
+  agent {
+    kubernetes {
+      yamlFile 'pods/helm-pod.yaml'
+    }
+  }    
   stages {
-    stage('1 & 2. Application Build and Unit Tests') {
-      agent{
-        kubernetes {
-          yamlFile 'pods/python-pod.yaml' 
-        }
-      }
+    stage('1. Monitor Pipeline Checkout and confirm helm') {
       steps {
         checkout scm
-
-        container('python'){
-          sh '''
-            python --version
-            cd flask_app
-            export PYTHONPATH=$(pwd):$PYTHONPATH
-            pwd
-            pip install -r requirements.txt
-            pip install -r requirements-dev.txt
-            cd ..
-            ls -la ./flask_app/tests
-            pytest flask_app/tests/test_app.py --maxfail=1 --disable-warnings --tb=short
-          '''
-        }
       } 
     }
-    stage('3. SonarQube Scan') {
-      agent{
-        kubernetes {
-          yamlFile 'pods/sonar-pod.yaml' 
-        }
-      }
-      environment {
-        SONAR_TOKEN = credentials('sonar-token-id')
-      }
-      steps {
-        container('sonar-scanner'){
-          withSonarQubeEnv('SONARQUBE_ENV') {
-            sh 'sonar-scanner -Dsonar.projectKey=task_6 -Dsonar.organization=justinseaman -Dsonar.sources=flask_app -Dsonar.token=$SONAR_TOKEN'
-          }
-        }
-      }
-    }
-
-    stage('4. Docker image building and pushing to any Registry') {
-      agent{
-        kubernetes {
-          yamlFile 'pods/kaniko-pod.yaml' // This file defines the kaniko container
-        }
-      }
-      steps {
-        //checkout scm
-
-        script {
-          def sha = env.GIT_COMMIT ?: 'manual'
-          def shortSha = sha.take(7)
-          def imageTagSha = "${env.REGISTRY}:${shortSha}"
-          def imageTagLatest = "${env.REGISTRY}:latest"
-          container('kaniko') {
-          sh """
-            cd flask_app 
-            /kaniko/executor \
-            --context `pwd` \
-            --dockerfile `pwd`/Dockerfile \
-            --destination ${imageTagSha} \
-            --destination ${imageTagLatest} \
-            --skip-tls-verify
-            """
-          }
-          env.SHORT_SHA = shortSha
-          env.IMAGE_SHA_TAG = imageTagSha
-        }
-      }
-    }
-    stage('5. Deploy to K8s with Helm') {
-      agent{
-        kubernetes {
-          yamlFile 'pods/helm-pod.yaml'
-        }
-      }
+    stage('2. Prometheus install') {
       steps {
         container('helm') {
-            sh """
-              helm upgrade --install hello-flask ./hello-flask \
-              --set image.name=${REGISTRY} \
-              --set image.tag=${SHORT_SHA}
-            """
+          sh '''
+            cd ./monitors/prometheus
+            #Using prometheus-commmunity because Bitnami EOL on 8.25.2025
+            repo="https://prometheus-community.github.io/helm-charts"
+            name="prometheus-community"
+            #Update repo sources
+            helm repo add $name $repo
+            helm repo update
+            #Confirm presence of chart
+            chart="prometheus-community/prometheus"
+            helm search repo $chart
+            #Get the values file from repo for modification
+            valueFile="prometheus-values.yaml"
+            #DEFAULT:wget https://raw.githubusercontent.com/prometheus-community/helm-charts/main/charts/prometheus/values.yaml -O $valueFile
+            #Set namespace
+            namespace="jenkins"
+            #Install/Upgrade
+            helm upgrade --install $name $chart --namespace $namespace -f $valueFile
+          '''
         }
       }
     }
-    stage('6. Smoke Test') {
-      agent {
-        kubernetes {
-          label 'default'
-        }
-      }
+    stage('3. Grafana Install') {
       steps {
-        container('jnlp'){
-            sh 'curl -f https://hello-flask.justinseaman.com/'
+        container('helm') {
+          sh '''
+            pwd
+            ls -ls
+            cd ./monitors/grafana
+            #Using prometheus-commmunity because Bitnami EOL on 8.25.2025
+            repo="https://grafana.github.io/helm-charts"
+            name="grafana"
+            #Update repo sources
+            helm repo add $name $repo
+            helm repo update
+            #Confirm presence of chart
+            chart="grafana/grafana"
+            helm search repo $chart
+            #Get the values file from repo for modification
+            #valueFile="grafana-values.yaml"
+            #DEFAULT:wget https://raw.githubusercontent.com/prometheus-community/helm-charts/main/charts/prometheus/values.yaml -O $valueFile
+            #Set namespace
+            namespace="jenkins"
+            #Install/Upgrade
+            helm upgrade --install $name $chart --namespace $namespace 
+            #-f $valueFile
+          '''
         }
       }
     }
