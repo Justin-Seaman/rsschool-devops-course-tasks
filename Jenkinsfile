@@ -38,7 +38,7 @@ pipeline {
         '''   
       }
     }
-
+    /*
     stage('4. Docker image building and pushing to any Registry') {
       agent{
         kubernetes {
